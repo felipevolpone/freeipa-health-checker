@@ -1,16 +1,16 @@
 language: python
 
 python:
-  - 2.7
-  - 3.5
+  - "2.7"
+  - "3.5"
 
 script:
-	- python -m unittest discover tests -p '*.py'
+    - python -m unittest discover tests -p '*.py'
 
 notifications:
     email:
-        recipients:
-            - fbarreto@redhat.com
+      recipients:
+          - fbarreto@redhat.com
+      on_success: change
+      on_failure: always
 
-        on_success: change
-        on_failure: always
