@@ -1,1 +1,1 @@
-# ipa-health-check
+# ipa-health-checker
