@@ -23,7 +23,7 @@ class TestHealthChecker(unittest.TestCase):
                       ('ocspSigningCert cert-pki-ca', 'u,u,u'),
                       ('subsystemCert cert-pki-ca', 'u,u,u')]
 
-        self.assertEquals(certs_list, hc.list_certs())
+        self.assertEqual(certs_list, hc.list_certs())
 
     def test_check_cert_is_valid(self):
 
@@ -45,10 +45,10 @@ class TestHealthChecker(unittest.TestCase):
         cert_data_to_succeed = cert_data_to_succeed.splitlines()
 
         hc = HealthChecker(sys_args=['list_certs', 'path'])
-        self.assertEquals(True, hc._check_cert_is_valid(cert_data_to_succeed))
+        self.assertEqual(True, hc._check_cert_is_valid(cert_data_to_succeed))
 
         cert_data_to_failure = cert_data.format(current_year,
                                                 expiration_year - 2)
         cert_data_to_failure = cert_data_to_failure.splitlines()
 
-        self.assertEquals(False, hc._check_cert_is_valid(cert_data_to_failure))
+        self.assertEqual(False, hc._check_cert_is_valid(cert_data_to_failure))
