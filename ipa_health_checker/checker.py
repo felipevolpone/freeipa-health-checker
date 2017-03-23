@@ -23,37 +23,36 @@ def get_logger():
     return logging.getLogger('ipa-hc')
 
 
-class Runner(object):
-
-    def _run(self, command):
-        processor = Popen(command, stderr=None, stdout=subprocess.PIPE,
-                          shell=True)
-        return processor.communicate()
+def execute(command):
+    processor = Popen(command, stderr=None, stdout=subprocess.PIPE,
+                      shell=True)
+    return processor.communicate()
 
 
-class HealthChecker(Runner):
+class HealthChecker(object):
 
-    def __init__(self):
+    def __init__(self, sys_args=None):
+        self.sys_args = sys_args if sys_args else sys.argv
         self.logger = get_logger()
 
-        parser = argparse.ArgumentParser(description="IPA Health Checker")
-        subparsers = parser.add_subparsers(dest='command')
+        self.parser = argparse.ArgumentParser(description="IPA Health Checker")
+        subparsers = self.parser.add_subparsers(dest='command')
 
         list_nssdb = subparsers.add_parser('list_nssdb_certs')
+        list_nssdb.add_argument('path')
+        list_nssdb.add_argument('--cert_name', help='certifacate name')
+        self.parsed_args = list_nssdb.parse_args(self.sys_args[2:])
 
-        command = sys.argv[1]
+    def run(self):
+        command = self.sys_args[1]
         if not hasattr(self, command):
             self.logger.error('command not found')
-            parser.print_help()
+            self.parser.print_help()
             return
 
-        getattr(self, command)(list_nssdb)
+        getattr(self, command)(self.parsed_args)
 
-    def list_nssdb_certs(self, subparser):
-        subparser.add_argument('path')
-        subparser.add_argument('--cert_name', help='certifacate name')
-        args = subparser.parse_args(sys.argv[2:])
-
+    def list_nssdb_certs(self, args):
         command = 'certutil -d {} -L'
         command = command.format(args.path)
 
@@ -61,10 +60,12 @@ class HealthChecker(Runner):
             command += ' -n "{}"'.format(args.cert_name)
 
         self.logger.debug('Running command {}'.format(command))
-        output = self._run(command)
+        output = execute(command)
+
         self.logger.info(output)
+        return output
 
 
 if __name__ == '__main__':
     create_logger()
-    HealthChecker()
+    HealthChecker().run()
