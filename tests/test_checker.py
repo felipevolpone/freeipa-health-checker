@@ -1,22 +1,21 @@
 import unittest
-
+import os
 from ipa_health_checker.checker import HealthChecker
-from ipa_health_checker import checker
 from datetime import datetime
 
 
 class TestHealthChecker(unittest.TestCase):
+    """
+    These unit test are actually integreation tests that run
+    without mocks. So, it's expected that the certutil
+    command line be installed on the system.
+    """
+
+    mock_certs_path = os.getcwd() + '/tests/mock_files'
 
     def test_list_certs(self):
-        hc = HealthChecker(sys_args=['list_certs', 'path'])
+        hc = HealthChecker(sys_args=['list_certs', self.mock_certs_path])
 
-        def fake_run(command):
-            certs = b"""
-\nCertificate Nickname                                         Trust Attributes\n                                                             SSL,S/MIME,JAR/XPI\n\ncaSigningCert cert-pki-ca                                    CTu,Cu,Cu\nServer-Cert cert-pki-ca                                      u,u,u\nauditSigningCert cert-pki-ca                                 u,u,Pu\nocspSigningCert cert-pki-ca                                  u,u,u\nsubsystemCert cert-pki-ca                                    u,u,u\n
-            """
-            return (certs, None)
-
-        checker.execute = fake_run
         certs_list = [('caSigningCert cert-pki-ca', 'CTu,Cu,Cu'),
                       ('Server-Cert cert-pki-ca', 'u,u,u'),
                       ('auditSigningCert cert-pki-ca', 'u,u,Pu'),
@@ -26,29 +25,23 @@ class TestHealthChecker(unittest.TestCase):
         self.assertEqual(certs_list, hc.list_certs())
 
     def test_check_cert_is_valid(self):
+        hc = HealthChecker(sys_args=['list_certs', self.mock_certs_path])
 
-        cert_data = """Certificate:
-        Data:
-            Version: 3 (0x2)
-            Serial Number: 3 (0x3)
-            Signature Algorithm: PKCS #1 SHA-256 With RSA Encryption
-            Issuer: "CN=Certificate Authority,O=LOCALHOST"
-            Validity:
-                Not Before: Wed Mar 22 21:35:13 {}
-                Not After : Tue Mar 12 21:35:13 {}
-        """
+        cert_data = hc._get_cert(self.mock_certs_path,
+                                 'Server-Cert cert-pki-ca')
+        self.assertEqual(True, hc._check_cert_is_valid(cert_data))
 
-        current_year = datetime.today().year
-        expiration_year = current_year + 2
+        last_year = datetime.now().year - 1
+        cert_data[8] = 'Not After : Tue Mar 12 21:35:13 {}'.format(last_year)
+        self.assertEqual(False, hc._check_cert_is_valid(cert_data))
 
-        cert_data_to_succeed = cert_data.format(current_year, expiration_year)
-        cert_data_to_succeed = cert_data_to_succeed.splitlines()
+    def test_certs_are_valid(self):
+        hc = HealthChecker(sys_args=['certs_are_valid', self.mock_certs_path])
 
-        hc = HealthChecker(sys_args=['list_certs', 'path'])
-        self.assertEqual(True, hc._check_cert_is_valid(cert_data_to_succeed))
+        expected = [('caSigningCert cert-pki-ca', True),
+                    ('Server-Cert cert-pki-ca', True),
+                    ('auditSigningCert cert-pki-ca', True),
+                    ('ocspSigningCert cert-pki-ca', True),
+                    ('subsystemCert cert-pki-ca', True)]
 
-        cert_data_to_failure = cert_data.format(current_year,
-                                                expiration_year - 2)
-        cert_data_to_failure = cert_data_to_failure.splitlines()
-
-        self.assertEqual(False, hc._check_cert_is_valid(cert_data_to_failure))
+        self.assertEqual(expected, hc.certs_are_valid())

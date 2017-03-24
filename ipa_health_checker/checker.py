@@ -48,8 +48,8 @@ class HealthChecker(object):
         command = command.format(self.parsed_args.path)
 
         self.logger.debug('Running command: $ {}'.format(command))
-        output = execute(command)
-        certs = output[0].splitlines()
+
+        certs = execute(command)
 
         cert_list = []
         for cert in certs:
@@ -58,23 +58,22 @@ class HealthChecker(object):
                 cert_list.append(extracted)
 
         self.logger.info('Certificates found: {}'.format(cert_list))
+
         return cert_list
 
     def _extract_cert_name(self, cert):
-        match = re.match(b'^(.+?)\s+(\w*,\w*,\w*)\s*$', cert)
+        match = re.match(b'^(.+?)\s+(\w*,\w*,\w*)\s*$', cert.encode())
         if match:
             match_tuple = match.groups()
             return (match_tuple[0].decode(), match_tuple[1].decode())
 
-    def __get_cert(self, path, cert_name):
+    def _get_cert(self, path, cert_name):
         command = 'certutil -d {} -L -n \"{}\"'
         command = command.format(path, cert_name)
 
         self.logger.debug('Running command: $ {}'.format(command))
 
-        output = execute(command)
-        output = output[0].decode().splitlines()
-        return output
+        return execute(command)
 
     def _check_cert_is_valid(self, cert_details):
         valid_from, valid_until = cert_details[7], cert_details[8]
@@ -105,9 +104,8 @@ class HealthChecker(object):
 
         certs_status = []
 
-        for cert in cert_list:
-            cert_name = cert[0]
-            cert_details = self.__get_cert(self.parsed_args.path, cert_name)
+        for cert_name, _ in cert_list:
+            cert_details = self._get_cert(self.parsed_args.path, cert_name)
             is_valid = self._check_cert_is_valid(cert_details)
 
             certs_status.append((cert_name, is_valid))

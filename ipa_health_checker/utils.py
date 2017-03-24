@@ -24,4 +24,4 @@ def get_logger():
 
 def execute(command):
     processor = Popen(command, stderr=None, stdout=subprocess.PIPE, shell=True)
-    return processor.communicate()
+    return processor.communicate()[0].decode().splitlines()
