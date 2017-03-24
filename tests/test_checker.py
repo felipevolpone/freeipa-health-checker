@@ -6,9 +6,9 @@ from datetime import datetime
 
 class TestHealthChecker(unittest.TestCase):
     """
-    These unit test are actually integreation tests that run
+    These unit tests are actually integreation tests that run
     without mocks. So, it's expected that the certutil
-    command line be installed on the system.
+    command is installed on the system.
     """
 
     mock_certs_path = os.getcwd() + '/tests/mock_files'
