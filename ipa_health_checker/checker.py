@@ -3,7 +3,7 @@ import argparse
 import sys
 import re
 from datetime import datetime
-from utils import get_logger, execute, create_logger
+from .utils import get_logger, execute, create_logger
 
 
 class HealthChecker(object):

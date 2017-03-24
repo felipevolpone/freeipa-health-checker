@@ -11,7 +11,7 @@ class TestHealthChecker(unittest.TestCase):
         hc = HealthChecker(sys_args=['list_certs', 'path'])
 
         def fake_run(command):
-            certs = """
+            certs = b"""
 \nCertificate Nickname                                         Trust Attributes\n                                                             SSL,S/MIME,JAR/XPI\n\ncaSigningCert cert-pki-ca                                    CTu,Cu,Cu\nServer-Cert cert-pki-ca                                      u,u,u\nauditSigningCert cert-pki-ca                                 u,u,Pu\nocspSigningCert cert-pki-ca                                  u,u,u\nsubsystemCert cert-pki-ca                                    u,u,u\n
             """
             return (certs, None)
