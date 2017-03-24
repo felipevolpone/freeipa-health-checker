@@ -3,7 +3,7 @@ import argparse
 import sys
 import re
 from datetime import datetime
-from .utils import get_logger, execute, create_logger
+from utils import get_logger, execute, create_logger
 
 
 class HealthChecker(object):
@@ -61,9 +61,10 @@ class HealthChecker(object):
         return cert_list
 
     def _extract_cert_name(self, cert):
-        match = re.match(r'^(.+?)\s+(\w*,\w*,\w*)\s*$', cert)
+        match = re.match(b'^(.+?)\s+(\w*,\w*,\w*)\s*$', cert)
         if match:
-            return match.groups()
+            match_tuple = match.groups()
+            return (match_tuple[0].decode(), match_tuple[1].decode())
 
     def __get_cert(self, path, cert_name):
         command = 'certutil -d {} -L -n \"{}\"'
@@ -72,7 +73,7 @@ class HealthChecker(object):
         self.logger.debug('Running command: $ {}'.format(command))
 
         output = execute(command)
-        output = output[0].splitlines()
+        output = output[0].decode().splitlines()
         return output
 
     def _check_cert_is_valid(self, cert_details):

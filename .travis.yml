@@ -2,9 +2,10 @@ language: python
 
 python:
   - "2.7"
-  - "3.5"
+  # - "3.5"
 
 script:
+    - certutil -L /etc/pki/pki
     - python -m unittest discover tests -p '*.py'
 
 notifications:
