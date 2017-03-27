@@ -65,13 +65,13 @@ class TestHealthChecker(unittest.TestCase):
         with open(mock_file_path, 'w+') as f:
             f.writelines(content)
 
-        self.assertEqual(True,
-                         hc.check_certs_in_right_path(cert_list_file=mock_file_path))
+        self.assertEqual(True, hc.check_certs_in_right_path(
+                         cert_list_file=mock_file_path))
 
         content = "/etc/pki/nssdb,subsystemCert cert-pki-ca"
 
         with open(mock_file_path, 'a') as f:
             f.writelines(content)
 
-        self.assertEqual(False,
-                         hc.check_certs_in_right_path(cert_list_file=mock_file_path))
+        self.assertEqual(False, hc.check_certs_in_right_path(
+                         cert_list_file=mock_file_path))

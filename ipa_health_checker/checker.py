@@ -159,4 +159,3 @@ name: {name}'.format(path=row['path'], name=row['cert_name']))
 if __name__ == '__main__':
     create_logger()
     HealthChecker().run_cli()
-
