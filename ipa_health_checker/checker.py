@@ -25,7 +25,7 @@ class HealthChecker(object):
         certs_valid = subparsers.add_parser('certs_are_valid')
         certs_valid.add_argument('path')
 
-        subparsers.add_parser('all_certs_created')
+        subparsers.add_parser('check_certs_in_right_path')
 
         self.parsed_args = self.parser.parse_args(self.sys_args)
 
@@ -120,7 +120,7 @@ class HealthChecker(object):
 
         return certs_status
 
-    def all_certs_created(self, cert_list_file=None):
+    def check_certs_in_right_path(self, cert_list_file=None):
         """
         Method to check if the certificates listed on file certs_list.csv
         exists where they should exist.

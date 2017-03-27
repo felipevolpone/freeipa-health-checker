@@ -1,6 +1,5 @@
 import unittest
 import os
-import json
 from ipa_health_checker.checker import HealthChecker
 from datetime import datetime
 
@@ -48,7 +47,7 @@ class TestHealthChecker(unittest.TestCase):
         self.assertEqual(expected, hc.certs_are_valid())
 
     def test_all_certificates_were_created(self):
-        hc = HealthChecker(sys_args=['all_certs_created'])
+        hc = HealthChecker(sys_args=['check_certs_in_right_path'])
         mock_file_path = self.mock_certs_path + 'certs_list_mock.csv'
 
         certs_names = ["Server-Cert cert-pki-ca",
@@ -67,7 +66,7 @@ class TestHealthChecker(unittest.TestCase):
             f.writelines(content)
 
         self.assertEqual(True,
-                         hc.all_certs_created(cert_list_file=mock_file_path))
+                         hc.check_certs_in_right_path(cert_list_file=mock_file_path))
 
         content = "/etc/pki/nssdb,subsystemCert cert-pki-ca"
 
@@ -75,4 +74,4 @@ class TestHealthChecker(unittest.TestCase):
             f.writelines(content)
 
         self.assertEqual(False,
-                         hc.all_certs_created(cert_list_file=mock_file_path))
+                         hc.check_certs_in_right_path(cert_list_file=mock_file_path))
