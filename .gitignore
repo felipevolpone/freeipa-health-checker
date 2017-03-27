@@ -87,3 +87,5 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+tests/mock_files/certs_list_mock.csv

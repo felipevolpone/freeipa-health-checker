@@ -1,0 +1,7 @@
+path,cert_name
+/etc/pki/pki-tomcat/alias,Server-Cert cert-pki-ca
+/etc/pki/pki-tomcat/alias,caSigningCert cert-pki-ca
+/etc/pki/pki-tomcat/alias,auditSigningCert cert-pki-ca
+/etc/pki/pki-tomcat/alias,ocspSigningCert cert-pki-ca
+/etc/pki/pki-tomcat/alias,subsystemCert cert-pki-ca
+/etc/pki/nssdb,subsystemCert cert-pki-ca

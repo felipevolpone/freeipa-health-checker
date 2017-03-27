@@ -1,5 +1,6 @@
 import unittest
 import os
+import json
 from ipa_health_checker.checker import HealthChecker
 from datetime import datetime
 
@@ -11,7 +12,7 @@ class TestHealthChecker(unittest.TestCase):
     command is installed on the system.
     """
 
-    mock_certs_path = os.getcwd() + '/tests/mock_files'
+    mock_certs_path = os.getcwd() + '/tests/mock_files/'
 
     def test_list_certs(self):
         hc = HealthChecker(sys_args=['list_certs', self.mock_certs_path])
@@ -45,3 +46,33 @@ class TestHealthChecker(unittest.TestCase):
                     ('subsystemCert cert-pki-ca', True)]
 
         self.assertEqual(expected, hc.certs_are_valid())
+
+    def test_all_certificates_were_created(self):
+        hc = HealthChecker(sys_args=['all_certs_created'])
+        mock_file_path = self.mock_certs_path + 'certs_list_mock.csv'
+
+        certs_names = ["Server-Cert cert-pki-ca",
+                       "caSigningCert cert-pki-ca",
+                       "auditSigningCert cert-pki-ca",
+                       "ocspSigningCert cert-pki-ca",
+                       "subsystemCert cert-pki-ca"]
+
+        content = "path,cert_name\n"
+
+        for name in certs_names:
+            content += "{path},{name}\n".format(path=self.mock_certs_path,
+                                                name=name)
+
+        with open(mock_file_path, 'w+') as f:
+            f.writelines(content)
+
+        self.assertEqual(True,
+                         hc.all_certs_created(cert_list_file=mock_file_path))
+
+        content = "/etc/pki/nssdb,subsystemCert cert-pki-ca"
+
+        with open(mock_file_path, 'a') as f:
+            f.writelines(content)
+
+        self.assertEqual(False,
+                         hc.all_certs_created(cert_list_file=mock_file_path))

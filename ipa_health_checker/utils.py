@@ -1,5 +1,6 @@
 
 import sys
+import os
 import logging
 import subprocess
 from subprocess import Popen
@@ -25,3 +26,8 @@ def get_logger():
 def execute(command):
     processor = Popen(command, stderr=None, stdout=subprocess.PIPE, shell=True)
     return processor.communicate()[0].decode().splitlines()
+
+
+def current_location():
+    return os.path.realpath(os.path.join(os.getcwd(),
+                                         os.path.dirname(__file__)))
