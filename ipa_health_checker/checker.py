@@ -19,10 +19,10 @@ class HealthChecker(object):
         list_nssdb = subparsers.add_parser('list_certs')
         list_nssdb.add_argument('path')
 
-        certs_valid = subparsers.add_parser('certs_are_valid')
+        certs_valid = subparsers.add_parser('certs_expired')
         certs_valid.add_argument('path')
 
-        subparsers.add_parser('check_certs_in_right_path')
+        subparsers.add_parser('ck_path_and_flags')
 
         self.parsed_args = self.parser.parse_args(self.sys_args)
 
@@ -117,7 +117,7 @@ class HealthChecker(object):
 
         return certs_status
 
-    def check_certs_path_and_flags(self, cert_list_file=None):
+    def ck_path_and_flags(self, cert_list_file=None):
         """
         Method to check if the certificates listed on file certs_list.csv
         exists where they should exist and if they have the right trust flags.
@@ -169,6 +169,7 @@ class HealthChecker(object):
     def __treat_cert_with_wrong_flags(self, row, cert_flags):
         message = "Certificate \"{name}\" from expected path {path}, do not has \
 these flags: {expected}; but these: {cur_flags}"
+
         message = message.format(name=row['name'], path=row['path'],
                                  expected=row['flags'], cur_flags=cert_flags)
 
