@@ -136,7 +136,8 @@ class HealthChecker(object):
 
                 old_path = row['path']
 
-            return True
+        self.logger.info('Certificates checked successfully.')
+        return True
 
 
 if __name__ == '__main__':
