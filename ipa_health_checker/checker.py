@@ -134,11 +134,11 @@ class HealthChecker(object):
 
         with open(full_path) as f:
 
-            certs_from_path, same_path = None, None
+            certs_from_path, old_path = None, None
 
             for row in csv.DictReader(f, delimiter=';'):
 
-                if row['path'] != same_path:
+                if row['path'] != old_path:
                     certs_from_path = self.list_certs(row['path'])
 
                 certs_names = [cert[0] for cert in certs_from_path]
@@ -154,7 +154,7 @@ class HealthChecker(object):
                     self.__treat_cert_with_wrong_flags(row, cert_flags)
                     return False
 
-                same_path = row['path']
+                old_path = row['path']
 
             return True
 
