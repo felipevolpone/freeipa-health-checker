@@ -24,18 +24,18 @@ class TestHealthChecker(unittest.TestCase):
 
         self.assertEqual(certs_list, hc.list_certs())
 
-    def test_check_cert_is_valid(self):
+    def test_check_cert_date(self):
         hc = HealthChecker(sys_args=['list_certs', self.mock_certs_path])
 
         cert_data = hc._get_cert(self.mock_certs_path,
                                  'Server-Cert cert-pki-ca')
-        self.assertEqual(True, hc._check_cert_is_valid(cert_data))
+        self.assertEqual(True, hc._check_cert_date(cert_data))
 
         last_year = datetime.now().year - 1
         cert_data[8] = 'Not After : Tue Mar 12 21:35:13 {}'.format(last_year)
-        self.assertEqual(False, hc._check_cert_is_valid(cert_data))
+        self.assertEqual(False, hc._check_cert_date(cert_data))
 
-    def test_certs_are_valid(self):
+    def test_certs_expired(self):
         hc = HealthChecker(sys_args=['certs_are_valid', self.mock_certs_path])
 
         expected = [('caSigningCert cert-pki-ca', True),
@@ -44,23 +44,24 @@ class TestHealthChecker(unittest.TestCase):
                     ('ocspSigningCert cert-pki-ca', True),
                     ('subsystemCert cert-pki-ca', True)]
 
-        self.assertEqual(expected, hc.certs_are_valid())
+        self.assertEqual(expected, hc.certs_expired())
 
     def test_all_certificates_were_created(self):
         hc = HealthChecker(sys_args=['check_certs_in_right_path'])
         mock_file_path = self.mock_certs_path + 'certs_list_mock.csv'
 
-        certs_names = ["Server-Cert cert-pki-ca",
-                       "caSigningCert cert-pki-ca",
-                       "auditSigningCert cert-pki-ca",
-                       "ocspSigningCert cert-pki-ca",
-                       "subsystemCert cert-pki-ca"]
+        certs = [('caSigningCert cert-pki-ca', 'CTu,Cu,Cu'),
+                 ('Server-Cert cert-pki-ca', 'u,u,u'),
+                 ('auditSigningCert cert-pki-ca', 'u,u,Pu'),
+                 ('ocspSigningCert cert-pki-ca', 'u,u,u'),
+                 ('subsystemCert cert-pki-ca', 'u,u,u')]
 
-        content = "path,cert_name\n"
+        content = "path;name;flags\n"
 
-        for name in certs_names:
-            content += "{path},{name}\n".format(path=self.mock_certs_path,
-                                                name=name)
+        for name, flags in certs:
+            content += "{path};{name};{flags}\n".format(flags=flags, name=name,
+                                                        path=
+                                                        self.mock_certs_path)
 
         with open(mock_file_path, 'w+') as f:
             f.writelines(content)
@@ -68,7 +69,7 @@ class TestHealthChecker(unittest.TestCase):
         self.assertEqual(True, hc.check_certs_in_right_path(
                          cert_list_file=mock_file_path))
 
-        content = "/etc/pki/nssdb,subsystemCert cert-pki-ca"
+        content = "/etc/pki/nssdb;subsystemCert cert-pki-ca;"
 
         with open(mock_file_path, 'a') as f:
             f.writelines(content)

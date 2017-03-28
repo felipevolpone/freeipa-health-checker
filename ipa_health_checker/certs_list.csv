@@ -1,7 +1,7 @@
-path,cert_name
-/etc/pki/pki-tomcat/alias,Server-Cert cert-pki-ca
-/etc/pki/pki-tomcat/alias,caSigningCert cert-pki-ca
-/etc/pki/pki-tomcat/alias,auditSigningCert cert-pki-ca
-/etc/pki/pki-tomcat/alias,ocspSigningCert cert-pki-ca
-/etc/pki/pki-tomcat/alias,subsystemCert cert-pki-ca
-/etc/pki/nssdb,subsystemCert cert-pki-ca
+path;name;flags
+/etc/pki/pki-tomcat/alias;Server-Cert cert-pki-ca;u,u,u
+/etc/pki/pki-tomcat/alias;caSigningCert cert-pki-ca;CTu,Cu,Cu
+/etc/pki/pki-tomcat/alias;auditSigningCert cert-pki-ca;u,u,Pu
+/etc/pki/pki-tomcat/alias;ocspSigningCert cert-pki-ca;u,u,u
+/etc/pki/pki-tomcat/alias;subsystemCert cert-pki-ca;u,u,u
+/etc/pki/nssdb;subsystemCert cert-pki-ca;u,u,u

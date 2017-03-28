@@ -80,7 +80,7 @@ class HealthChecker(object):
 
         return execute(command)
 
-    def _check_cert_is_valid(self, cert_details):
+    def _check_cert_date(self, cert_details):
         valid_from, valid_until = cert_details[7], cert_details[8]
 
         valid_from = valid_from.split(': ')[1]
@@ -92,10 +92,10 @@ class HealthChecker(object):
 
         return from_date < now and now < until_date
 
-    def certs_are_valid(self):
+    def certs_expired(self):
         """
         Method to check if the certificates in a given path
-        are valid  (if they expiration date are valid).
+        expired  (if they expiration date are valid).
 
         Returns:
             A list of tuples where which tuple has the name of the
@@ -111,7 +111,7 @@ class HealthChecker(object):
 
         for cert_name, _ in cert_list:
             cert_details = self._get_cert(self.parsed_args.path, cert_name)
-            is_valid = self._check_cert_is_valid(cert_details)
+            is_valid = self._check_cert_date(cert_details)
 
             certs_status.append((cert_name, is_valid))
 
@@ -123,7 +123,7 @@ class HealthChecker(object):
     def check_certs_in_right_path(self, cert_list_file=None):
         """
         Method to check if the certificates listed on file certs_list.csv
-        exists where they should exist.
+        exists where they should exist and if they have the right trust flags.
 
         Args:
             cert_list_file: if it is not None, will not use the
@@ -139,16 +139,22 @@ class HealthChecker(object):
 
             certs_from_path, same_path = None, None
 
-            for row in csv.DictReader(f, delimiter=','):
+            for row in csv.DictReader(f, delimiter=';'):
 
                 if row['path'] != same_path:
                     certs_from_path = self.list_certs(row['path'])
 
                 certs_names = [cert[0] for cert in certs_from_path]
 
-                if row['cert_name'] not in certs_names:
-                    self.logger.error('Certificate from {path} not found with \
-name: {name}'.format(path=row['path'], name=row['cert_name']))
+                if row['name'] not in certs_names:
+
+                    message = 'Certificate \"{name}\" should be on: {path}. '
+                    message += 'Was found there: False. '
+
+                    message = message.format(name=row['name'],
+                                             path=row['path'])
+
+                    self.logger.error(message)
                     return False
 
                 same_path = row['path']
