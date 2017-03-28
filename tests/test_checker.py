@@ -1,6 +1,7 @@
 import unittest
 import os
 from ipa_health_checker.checker import HealthChecker
+from ipa_health_checker import checker_helper as helper
 from datetime import datetime
 
 
@@ -23,17 +24,6 @@ class TestHealthChecker(unittest.TestCase):
                       ('subsystemCert cert-pki-ca', 'u,u,u')]
 
         self.assertEqual(certs_list, hc.list_certs())
-
-    def test_check_cert_date(self):
-        hc = HealthChecker(sys_args=['list_certs', self.mock_certs_path])
-
-        cert_data = hc._get_cert(self.mock_certs_path,
-                                 'Server-Cert cert-pki-ca')
-        self.assertEqual(True, hc._check_cert_date(cert_data))
-
-        last_year = datetime.now().year - 1
-        cert_data[8] = 'Not After : Tue Mar 12 21:35:13 {}'.format(last_year)
-        self.assertEqual(False, hc._check_cert_date(cert_data))
 
     def test_certs_expired(self):
         hc = HealthChecker(sys_args=['certs_expired', self.mock_certs_path])
@@ -87,3 +77,16 @@ class TestHealthChecker(unittest.TestCase):
             f.writelines(content)
 
         self.assertEqual(False, hc.ck_path_and_flags(cert_list_file=mock_file_path))
+
+    class TestHelper(unittest.TestCase):
+
+        def test_check_cert_date(self):
+            hc = HealthChecker(sys_args=['list_certs', self.mock_certs_path])
+
+            cert_data = hc._get_cert(self.mock_certs_path, 'Server-Cert cert-pki-ca')
+
+            self.assertEqual(True, helper.compare_cert_date(cert_data))
+
+            last_year = datetime.now().year - 1
+            cert_data[8] = 'Not After : Tue Mar 12 21:35:13 {}'.format(last_year)
+            self.assertEqual(False, helper._check_cert_date(cert_data))

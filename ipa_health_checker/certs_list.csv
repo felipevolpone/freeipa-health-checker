@@ -4,4 +4,3 @@ path;name;flags
 /etc/pki/pki-tomcat/alias;auditSigningCert cert-pki-ca;u,u,Pu
 /etc/pki/pki-tomcat/alias;ocspSigningCert cert-pki-ca;u,u,u
 /etc/pki/pki-tomcat/alias;subsystemCert cert-pki-ca;u,u,u
-/etc/pki/nssdb;subsystemCert cert-pki-ca;u,u,u
