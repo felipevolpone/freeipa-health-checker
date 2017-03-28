@@ -1,10 +1,7 @@
-import os
-import csv
-import argparse
-import sys
-import re
+
+import csv, argparse, sys, re
 from datetime import datetime
-from .utils import get_logger, execute, create_logger, current_location
+from .utils import get_logger, execute, create_logger, get_file_full_path
 
 
 class HealthChecker(object):
@@ -120,7 +117,7 @@ class HealthChecker(object):
 
         return certs_status
 
-    def check_certs_in_right_path(self, cert_list_file=None):
+    def check_certs_path_and_flags(self, cert_list_file=None):
         """
         Method to check if the certificates listed on file certs_list.csv
         exists where they should exist and if they have the right trust flags.
@@ -132,10 +129,10 @@ class HealthChecker(object):
         Returns: True or False
         """
 
-        certs_list_path = (cert_list_file if cert_list_file
-                           else self.CERTS_LIST_FILE)
+        certs_list_path = cert_list_file if cert_list_file else self.CERTS_LIST_FILE
+        full_path = get_file_full_path(certs_list_path)
 
-        with open(os.path.join(current_location(), certs_list_path)) as f:
+        with open(full_path) as f:
 
             certs_from_path, same_path = None, None
 
@@ -147,19 +144,35 @@ class HealthChecker(object):
                 certs_names = [cert[0] for cert in certs_from_path]
 
                 if row['name'] not in certs_names:
+                    self.__treat_cert_not_found(row)
+                    return False
 
-                    message = 'Certificate \"{name}\" should be on: {path}. '
-                    message += 'Was found there: False. '
+                cert_index = certs_names.index(row['name'])
+                cert_flags = certs_from_path[cert_index][1]
 
-                    message = message.format(name=row['name'],
-                                             path=row['path'])
-
-                    self.logger.error(message)
+                if row['flags'] != cert_flags:
+                    self.__treat_cert_with_wrong_flags(row, cert_flags)
                     return False
 
                 same_path = row['path']
 
             return True
+
+    def __treat_cert_not_found(self, row):
+        message = 'Certificate \"{name}\" should be on: {path}. '
+        message += 'Was found there: False. '
+
+        message = message.format(name=row['name'], path=row['path'])
+
+        self.logger.error(message)
+
+    def __treat_cert_with_wrong_flags(self, row, cert_flags):
+        message = "Certificate \"{name}\" from expected path {path}, do not has \
+these flags: {expected}; but these: {cur_flags}"
+        message = message.format(name=row['name'], path=row['path'],
+                                 expected=row['flags'], cur_flags=cert_flags)
+
+        self.logger.error(message)
 
 
 if __name__ == '__main__':

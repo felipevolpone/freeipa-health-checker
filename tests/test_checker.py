@@ -56,23 +56,33 @@ class TestHealthChecker(unittest.TestCase):
                  ('ocspSigningCert cert-pki-ca', 'u,u,u'),
                  ('subsystemCert cert-pki-ca', 'u,u,u')]
 
-        content = "path;name;flags\n"
+        def create_content(certs):
+            content = "path;name;flags\n"
 
-        for name, flags in certs:
-            content += "{path};{name};{flags}\n".format(flags=flags, name=name,
-                                                        path=
-                                                        self.mock_certs_path)
+            for name, flags in certs:
+                content += ("{path};{name};{flags}\n".format(flags=flags, name=name,
+                                                             path=self.mock_certs_path))
+            return content
+
+        content = create_content(certs)
 
         with open(mock_file_path, 'w+') as f:
             f.writelines(content)
 
-        self.assertEqual(True, hc.check_certs_in_right_path(
-                         cert_list_file=mock_file_path))
-
+        self.assertEqual(True, hc.check_certs_path_and_flags(cert_list_file=mock_file_path))
+        # checking in case that the cert is not found
         content = "/etc/pki/nssdb;subsystemCert cert-pki-ca;"
 
         with open(mock_file_path, 'a') as f:
             f.writelines(content)
 
-        self.assertEqual(False, hc.check_certs_in_right_path(
-                         cert_list_file=mock_file_path))
+        self.assertEqual(False, hc.check_certs_path_and_flags(cert_list_file=mock_file_path))
+
+        # checking the case that the cert has the wrong trust flags
+        certs[0] = ('caSigningCert cert-pki-ca', 'u,u,u')
+        content = create_content(certs)
+
+        with open(mock_file_path, 'w+') as f:
+            f.writelines(content)
+
+        self.assertEqual(False, hc.check_certs_path_and_flags(cert_list_file=mock_file_path))

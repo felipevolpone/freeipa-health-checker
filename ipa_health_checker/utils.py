@@ -28,6 +28,6 @@ def execute(command):
     return processor.communicate()[0].decode().splitlines()
 
 
-def current_location():
-    return os.path.realpath(os.path.join(os.getcwd(),
-                                         os.path.dirname(__file__)))
+def get_file_full_path(file_path):
+    return os.path.join(os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__))),
+                        file_path)
