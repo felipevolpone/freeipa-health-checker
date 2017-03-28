@@ -78,15 +78,18 @@ class TestHealthChecker(unittest.TestCase):
 
         self.assertEqual(False, hc.ck_path_and_flags(cert_list_file=mock_file_path))
 
-    class TestHelper(unittest.TestCase):
 
-        def test_check_cert_date(self):
-            hc = HealthChecker(sys_args=['list_certs', self.mock_certs_path])
+class TestHelper(unittest.TestCase):
 
-            cert_data = hc._get_cert(self.mock_certs_path, 'Server-Cert cert-pki-ca')
+    mock_certs_path = os.getcwd() + '/tests/mock_files/'
 
-            self.assertEqual(True, helper.compare_cert_date(cert_data))
+    def test_check_cert_date(self):
+        hc = HealthChecker(sys_args=['list_certs', self.mock_certs_path])
 
-            last_year = datetime.now().year - 1
-            cert_data[8] = 'Not After : Tue Mar 12 21:35:13 {}'.format(last_year)
-            self.assertEqual(False, helper._check_cert_date(cert_data))
+        cert_data = hc._get_cert(self.mock_certs_path, 'Server-Cert cert-pki-ca')
+
+        self.assertEqual(True, helper.compare_cert_date(cert_data))
+
+        last_year = datetime.now().year - 1
+        cert_data[8] = 'Not After : Tue Mar 12 21:35:13 {}'.format(last_year)
+        self.assertEqual(False, helper.compare_cert_date(cert_data))
