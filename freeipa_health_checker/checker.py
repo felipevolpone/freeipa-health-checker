@@ -12,6 +12,7 @@ class HealthChecker(object):
         self.logger = get_logger()
 
         self.parser = argparse.ArgumentParser(description="IPA Health Checker")
+
         subparsers = self.parser.add_subparsers(dest='command')
 
         list_nssdb = subparsers.add_parser('list_certs')
@@ -20,8 +21,15 @@ class HealthChecker(object):
         certs_valid = subparsers.add_parser('certs_expired')
         certs_valid.add_argument('path')
 
-        subparsers.add_parser('ck_path_and_flags')
-        subparsers.add_parser('ck_kra_setup')
+        ck_path_certs = subparsers.add_parser('ck_path_and_flags')
+        ck_path_certs.add_argument('--csv_file', help='CSV file with info of path and name \
+of the certs. Check the docs for more info')
+
+        ck_kra = subparsers.add_parser('ck_kra_setup')
+        ck_kra.add_argument('--dir', help='Where the kra dir should be found',
+                            default=settings.KRA_DEFAULT_DIR_PATH)
+        ck_kra.add_argument('--cert', help='Where the kra cert should be found',
+                             default=settings.KRA_DEFAULT_CERT_PATH)
 
         self.parsed_args = self.parser.parse_args(self.sys_args)
 
@@ -103,20 +111,19 @@ class HealthChecker(object):
 
         return certs_status
 
-    def ck_path_and_flags(self, cert_list_file=None):
+    def ck_path_and_flags(self):
         """
         Method to check if the certificates listed on file certs_list.csv
         exists where they should exist and if they have the right trust flags.
 
-        Args:
-            cert_list_file: if it is not None, will not use the
-            cert_list.csv file.
-
         Returns: True or False
         """
 
-        certs_list_path = cert_list_file if cert_list_file else settings.CERTS_LIST_FILE
-        full_path = get_file_full_path(certs_list_path)
+        full_path = None
+        if self.parsed_args.csv_file:
+            full_path = self.parsed_args.csv_file
+        else:
+            full_path = get_file_full_path(settings.CERTS_LIST_FILE)
 
         with open(full_path) as f:
 
@@ -146,14 +153,14 @@ class HealthChecker(object):
         return True
 
     def ck_kra_setup(self):
-        path_to_kra = settings.KRA_DEFAULT_DIR_PATH
+        path_to_kra = self.parsed_args.dir
 
         result = {'kra_in_expected_path': False, 'kra_cert_present': False}
 
         if os.path.exists(path_to_kra) and os.path.isdir(path_to_kra):
             result['kra_in_expected_path'] = True
 
-        certs_from_path = self.list_certs(settings.KRA_DEFAULT_CERT_PATH)
+        certs_from_path = self.list_certs(self.parsed_args.cert)
         certs_names = [cert[0] for cert in certs_from_path]
 
         kra_certs = filter(lambda cert: 'kra' in cert.lower(), certs_names)

@@ -37,8 +37,8 @@ class TestHealthChecker(unittest.TestCase):
         self.assertEqual(expected, hc.certs_expired())
 
     def test_all_certificates_were_created(self):
-        hc = HealthChecker(sys_args=['ck_path_and_flags'])
         mock_file_path = self.mock_certs_path + 'certs_list_mock.csv'
+        hc = HealthChecker(sys_args=['ck_path_and_flags', '--csv_file', mock_file_path])
 
         certs = [('caSigningCert cert-pki-ca', 'CTu,Cu,Cu'),
                  ('Server-Cert cert-pki-ca', 'u,u,u'),
@@ -59,7 +59,7 @@ class TestHealthChecker(unittest.TestCase):
         with open(mock_file_path, 'w+') as f:
             f.writelines(content)
 
-        self.assertEqual(True, hc.ck_path_and_flags(cert_list_file=mock_file_path))
+        self.assertEqual(True, hc.ck_path_and_flags())
 
         # checking in case that the cert is not found
         content = "/etc/pki/nssdb;subsystemCert cert-pki-ca;"
@@ -67,7 +67,7 @@ class TestHealthChecker(unittest.TestCase):
         with open(mock_file_path, 'a') as f:
             f.writelines(content)
 
-        self.assertEqual(False, hc.ck_path_and_flags(cert_list_file=mock_file_path))
+        self.assertEqual(False, hc.ck_path_and_flags())
 
         # checking the case that the cert has the wrong trust flags
         certs[0] = ('caSigningCert cert-pki-ca', 'u,u,u')
@@ -76,7 +76,7 @@ class TestHealthChecker(unittest.TestCase):
         with open(mock_file_path, 'w+') as f:
             f.writelines(content)
 
-        self.assertEqual(False, hc.ck_path_and_flags(cert_list_file=mock_file_path))
+        self.assertEqual(False, hc.ck_path_and_flags())
 
     def test_ck_kra_setup(self):
         kra_path = self.mock_certs_path + 'kra'
