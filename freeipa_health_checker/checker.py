@@ -29,7 +29,7 @@ of the certs. Check the docs for more info')
         ck_kra.add_argument('--dir', help='Where the kra dir should be found',
                             default=settings.KRA_DEFAULT_DIR_PATH)
         ck_kra.add_argument('--cert', help='Where the kra cert should be found',
-                             default=settings.KRA_DEFAULT_CERT_PATH)
+                            default=settings.KRA_DEFAULT_CERT_PATH)
 
         self.parsed_args = self.parser.parse_args(self.sys_args)
 
