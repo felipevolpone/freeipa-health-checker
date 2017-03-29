@@ -29,7 +29,9 @@ yum install libnss3-tools
 
 3. Start using it:
 ```bash
-python -m ipa_health_checker.checker ck_path_and_flags
+python -m ipa_health_checker.checker -h
+python -m ipa_health_checker.checker ck_path_and_flags [--dir <path>] [--cert <path>]
+python -m ipa_health_checker.checker ck_kra_setup [--csv_file <path>]
 python -m ipa_health_checker.checker list_certs <path>
 python -m ipa_health_checker.checker certs_expired <path>
 ```
