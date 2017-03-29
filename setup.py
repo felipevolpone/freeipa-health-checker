@@ -1,9 +1,9 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="ipa-health-checker",
-    description="ipa-health-checker",
-    url="http://github.com/felipevolpone/ipa-health-checker",
+    name="freeipa-health-checker",
+    description="freeipa-health-checker",
+    url="http://github.com/felipevolpone/freeipa-health-checker",
     packages=find_packages(exclude=['tests']),
 )
 

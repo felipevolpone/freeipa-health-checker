@@ -1,4 +1,4 @@
-# ipa-health-checker
+# freeipa-health-checker
 
 [![Build Status](https://travis-ci.org/felipevolpone/ipa-health-checker.svg?branch=master)](https://travis-ci.org/felipevolpone/ipa-health-checker)
 ![Python Version](https://img.shields.io/badge/python-2.7-green.svg)
@@ -45,4 +45,4 @@ python -m unittest discover tests -p '*.py'  # or use python3
 ```
 
 ## Next steps
-Please check the [issues](https://github.com/felipevolpone/ipa-health-checker/issues)
+Please check the [issues](https://github.com/felipevolpone/freeipa-health-checker/issues)

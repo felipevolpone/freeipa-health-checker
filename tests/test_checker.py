@@ -1,7 +1,7 @@
 import unittest
 import os
-from ipa_health_checker.checker import HealthChecker
-from ipa_health_checker import checker_helper as helper
+from freeipa_health_checker.checker import HealthChecker
+from freeipa_health_checker import checker_helper as helper
 from datetime import datetime
 
 
