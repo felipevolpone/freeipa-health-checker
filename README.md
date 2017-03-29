@@ -21,7 +21,7 @@ git clone git@github.com:felipevolpone/ipa-health-checker.git
 cd ipa-health-checker;
 ```
 
-2. Install [certutil]()
+2. Install [certutil](https://fedoraproject.org/wiki/NSS_Tools_:_certutil)
 ```bash
 apt-get install libnss3-tools
 yum install libnss3-tools

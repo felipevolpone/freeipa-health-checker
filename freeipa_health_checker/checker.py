@@ -1,5 +1,5 @@
 
-import csv, argparse, sys
+import csv, argparse, sys, os
 from .utils import get_logger, execute, create_logger, get_file_full_path
 from . import checker_helper as helper
 from . import settings
@@ -21,6 +21,7 @@ class HealthChecker(object):
         certs_valid.add_argument('path')
 
         subparsers.add_parser('ck_path_and_flags')
+        subparsers.add_parser('ck_kra_setup')
 
         self.parsed_args = self.parser.parse_args(self.sys_args)
 
@@ -49,6 +50,13 @@ class HealthChecker(object):
 
         self.logger.debug('Running command: $ {}'.format(command))
 
+        cert_list = self._execute_and_get_certs(command)
+
+        self.logger.debug('Certificates found: {}'.format(cert_list))
+
+        return cert_list
+
+    def _execute_and_get_certs(self, command):
         certs = execute(command)
 
         cert_list = []
@@ -56,8 +64,6 @@ class HealthChecker(object):
             extracted = helper.extract_cert_name(cert)
             if extracted:
                 cert_list.append(extracted)
-
-        self.logger.debug('Certificates found: {}'.format(cert_list))
 
         return cert_list
 
@@ -138,6 +144,30 @@ class HealthChecker(object):
 
         self.logger.info('Certificates checked successfully.')
         return True
+
+    def ck_kra_setup(self):
+        path_to_kra = settings.KRA_DEFAULT_DIR_PATH
+
+        result = {'kra_in_expected_path': False, 'kra_cert_present': False}
+
+        if os.path.exists(path_to_kra) and os.path.isdir(path_to_kra):
+            result['kra_in_expected_path'] = True
+
+        certs_from_path = self.list_certs(settings.KRA_DEFAULT_CERT_PATH)
+        certs_names = [cert[0] for cert in certs_from_path]
+
+        kra_certs = filter(lambda cert: 'kra' in cert.lower(), certs_names)
+
+        if any(kra_certs):
+            result['kra_cert_present'] = True
+
+        message = 'KRA is installed: {installed}. Cert was found: {cert_found}'
+        message = message.format(installed=result['kra_in_expected_path'],
+                                 cert_found=result['kra_cert_present'])
+
+        self.logger.info(message)
+
+        return result
 
 
 if __name__ == '__main__':

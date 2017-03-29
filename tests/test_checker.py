@@ -1,7 +1,7 @@
 import unittest
 import os
 from freeipa_health_checker.checker import HealthChecker
-from freeipa_health_checker import checker_helper as helper
+from freeipa_health_checker import checker_helper as helper, settings
 from datetime import datetime
 
 
@@ -77,6 +77,41 @@ class TestHealthChecker(unittest.TestCase):
             f.writelines(content)
 
         self.assertEqual(False, hc.ck_path_and_flags(cert_list_file=mock_file_path))
+
+    def test_ck_kra_setup(self):
+        kra_path = self.mock_certs_path + 'kra'
+
+        # removing possible stuff leave behind
+        if os.path.exists(kra_path):
+            os.rmdir(kra_path)
+        os.mkdir(kra_path)
+
+        settings.KRA_DEFAULT_DIR_PATH = kra_path
+        settings.KRA_DEFAULT_CERT_PATH = self.mock_certs_path
+
+        cert_data = [('caSigningCert cert-pki-ca', 'CTu,Cu,Cu'),
+                     ('Server-Cert cert-pki-ca', 'u,u,u'),
+                     ('auditSigningCert cert-pki-ca', 'u,u,Pu'),
+                     ('ocspSigningCert cert-pki-ca', 'u,u,u'),
+                     ('subsystemCert cert-pki-ca', 'u,u,u'),
+                     ('subsystemCert cert-kra-ca', 'u,u,u')]  # mock data
+
+        def fake_execute_and_get_certs(command):
+            return cert_data
+
+        hc = HealthChecker(sys_args=['ck_kra_setup'])
+        hc._execute_and_get_certs = fake_execute_and_get_certs
+
+        # testing when kra is present and it has dir
+        result_expected = {'kra_in_expected_path': True, 'kra_cert_present': True}
+        self.assertEqual(result_expected, hc.ck_kra_setup())
+
+        os.rmdir(kra_path)
+
+        # testing when kra is not present and it hasn't the dir
+        del cert_data[-1]
+        result_expected = {'kra_in_expected_path': False, 'kra_cert_present': False}
+        self.assertEqual(result_expected, hc.ck_kra_setup())
 
 
 class TestHelper(unittest.TestCase):
