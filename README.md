@@ -1,6 +1,6 @@
 # freeipa-health-checker
 
-[![Build Status](https://travis-ci.org/felipevolpone/ipa-health-checker.svg?branch=master)](https://travis-ci.org/felipevolpone/ipa-health-checker)
+[![Build Status](https://travis-ci.org/felipevolpone/freeipa-health-checker.svg?branch=master)](https://travis-ci.org/felipevolpone/freeipa-health-checker)
 ![Python Version](https://img.shields.io/badge/python-2.7-green.svg)
 ![Python Version](https://img.shields.io/badge/python-3.5-green.svg)
 
