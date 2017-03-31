@@ -1,6 +1,6 @@
-path;name;flags
-/etc/pki/pki-tomcat/alias;Server-Cert cert-pki-ca;u,u,u
-/etc/pki/pki-tomcat/alias;caSigningCert cert-pki-ca;CTu,Cu,Cu
-/etc/pki/pki-tomcat/alias;auditSigningCert cert-pki-ca;u,u,Pu
-/etc/pki/pki-tomcat/alias;ocspSigningCert cert-pki-ca;u,u,u
-/etc/pki/pki-tomcat/alias;subsystemCert cert-pki-ca;u,u,u
+path;name;flags;certmonger
+/etc/pki/pki-tomcat/alias;Server-Cert cert-pki-ca;u,u,u;true
+/etc/pki/pki-tomcat/alias;caSigningCert cert-pki-ca;CTu,Cu,Cu;true
+/etc/pki/pki-tomcat/alias;auditSigningCert cert-pki-ca;u,u,Pu;true
+/etc/pki/pki-tomcat/alias;ocspSigningCert cert-pki-ca;u,u,u;true
+/etc/pki/pki-tomcat/alias;subsystemCert cert-pki-ca;u,u,u;true

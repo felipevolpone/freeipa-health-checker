@@ -2,7 +2,6 @@ import unittest
 import os
 from freeipa_health_checker.checker import HealthChecker
 from freeipa_health_checker import checker_helper as helper, settings
-from datetime import datetime
 
 
 class TestHealthChecker(unittest.TestCase):
@@ -12,10 +11,10 @@ class TestHealthChecker(unittest.TestCase):
     command is installed on the system.
     """
 
-    mock_certs_path = os.getcwd() + '/tests/mock_files/'
+    path_mock_files = os.getcwd() + '/tests/mock_files/'
 
     def test_list_certs(self):
-        hc = HealthChecker(sys_args=['list_certs', self.mock_certs_path])
+        hc = HealthChecker(sys_args=['list_certs', self.path_mock_files])
 
         certs_list = [('caSigningCert cert-pki-ca', 'CTu,Cu,Cu'),
                       ('Server-Cert cert-pki-ca', 'u,u,u'),
@@ -26,7 +25,7 @@ class TestHealthChecker(unittest.TestCase):
         self.assertEqual(certs_list, hc.list_certs())
 
     def test_certs_expired(self):
-        hc = HealthChecker(sys_args=['certs_expired', self.mock_certs_path])
+        hc = HealthChecker(sys_args=['certs_expired', self.path_mock_files])
 
         expected = [('caSigningCert cert-pki-ca', True),
                     ('Server-Cert cert-pki-ca', True),
@@ -36,25 +35,32 @@ class TestHealthChecker(unittest.TestCase):
 
         self.assertEqual(expected, hc.certs_expired())
 
-    def test_all_certificates_were_created(self):
-        mock_file_path = self.mock_certs_path + 'certs_list_mock.csv'
+    def test_ck_path_and_flags(self):
+        mock_file_path = self.path_mock_files + 'certs_list_mock.csv'
         hc = HealthChecker(sys_args=['ck_path_and_flags', '--csv_file', mock_file_path])
 
-        certs = [('caSigningCert cert-pki-ca', 'CTu,Cu,Cu'),
-                 ('Server-Cert cert-pki-ca', 'u,u,u'),
-                 ('auditSigningCert cert-pki-ca', 'u,u,Pu'),
-                 ('ocspSigningCert cert-pki-ca', 'u,u,u'),
-                 ('subsystemCert cert-pki-ca', 'u,u,u')]
+        certs = [('caSigningCert cert-pki-ca', 'CTu,Cu,Cu', False),
+                 ('Server-Cert cert-pki-ca', 'u,u,u', False),
+                 ('auditSigningCert cert-pki-ca', 'u,u,Pu', True),
+                 ('ocspSigningCert cert-pki-ca', 'u,u,u', True),
+                 ('subsystemCert cert-pki-ca', 'u,u,u', False)]
 
-        def create_content(certs):
-            content = "path;name;flags\n"
+        def fake_certmonger_list_result():
+            with open(self.path_mock_files + 'certmonger_list_result.txt') as f:
+                return helper.process_certmonger_data(f.read())
 
-            for name, flags in certs:
-                content += ("{path};{name};{flags}\n".format(flags=flags, name=name,
-                                                             path=self.mock_certs_path))
+        helper.certmonger_list = fake_certmonger_list_result
+
+        def create_csv_content(certs):
+            content = "path;name;flags;certmonger\n"
+
+            for name, flags, certmonger in certs:
+                content += ("{path};{name};{flags};{certmonger}\n".format(flags=flags, name=name,
+                            path=self.path_mock_files, certmonger=certmonger))
+
             return content
 
-        content = create_content(certs)
+        content = create_csv_content(certs)
 
         with open(mock_file_path, 'w+') as f:
             f.writelines(content)
@@ -62,7 +68,7 @@ class TestHealthChecker(unittest.TestCase):
         self.assertEqual(True, hc.ck_path_and_flags())
 
         # checking in case that the cert is not found
-        content = "/etc/pki/nssdb;subsystemCert cert-pki-ca;"
+        content = "/etc/pki/nssdb;subsystemCert cert-pki-ca;False"
 
         with open(mock_file_path, 'a') as f:
             f.writelines(content)
@@ -70,8 +76,17 @@ class TestHealthChecker(unittest.TestCase):
         self.assertEqual(False, hc.ck_path_and_flags())
 
         # checking the case that the cert has the wrong trust flags
-        certs[0] = ('caSigningCert cert-pki-ca', 'u,u,u')
-        content = create_content(certs)
+        certs[0] = ('caSigningCert cert-pki-ca', 'u,u,u', False)
+        content = create_csv_content(certs)
+
+        with open(mock_file_path, 'w+') as f:
+            f.writelines(content)
+
+        self.assertEqual(False, hc.ck_path_and_flags())
+
+        # checking when the cert is not in the certmonger monitoring
+        certs[0] = ('caSigningCert cert-pki-ca', 'CTu,Cu,Cu', True)
+        content = create_csv_content(certs)
 
         with open(mock_file_path, 'w+') as f:
             f.writelines(content)
@@ -79,7 +94,7 @@ class TestHealthChecker(unittest.TestCase):
         self.assertEqual(False, hc.ck_path_and_flags())
 
     def test_ck_kra_setup(self):
-        kra_path = self.mock_certs_path + 'kra'
+        kra_path = self.path_mock_files + 'kra'
 
         # removing possible stuff leave behind
         if os.path.exists(kra_path):
@@ -87,7 +102,7 @@ class TestHealthChecker(unittest.TestCase):
         os.mkdir(kra_path)
 
         settings.KRA_DEFAULT_DIR_PATH = kra_path
-        settings.KRA_DEFAULT_CERT_PATH = self.mock_certs_path
+        settings.KRA_DEFAULT_CERT_PATH = self.path_mock_files
 
         cert_data = [('caSigningCert cert-pki-ca', 'CTu,Cu,Cu'),
                      ('Server-Cert cert-pki-ca', 'u,u,u'),
@@ -112,19 +127,3 @@ class TestHealthChecker(unittest.TestCase):
         del cert_data[-1]
         result_expected = {'kra_in_expected_path': False, 'kra_cert_present': False}
         self.assertEqual(result_expected, hc.ck_kra_setup())
-
-
-class TestHelper(unittest.TestCase):
-
-    mock_certs_path = os.getcwd() + '/tests/mock_files/'
-
-    def test_check_cert_date(self):
-        hc = HealthChecker(sys_args=['list_certs', self.mock_certs_path])
-
-        cert_data = hc._get_cert(self.mock_certs_path, 'Server-Cert cert-pki-ca')
-
-        self.assertEqual(True, helper.compare_cert_date(cert_data))
-
-        last_year = datetime.now().year - 1
-        cert_data[8] = 'Not After : Tue Mar 12 21:35:13 {}'.format(last_year)
-        self.assertEqual(False, helper.compare_cert_date(cert_data))

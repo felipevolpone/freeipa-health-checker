@@ -125,6 +125,8 @@ of the certs. Check the docs for more info')
         else:
             full_path = get_file_full_path(settings.CERTS_LIST_FILE)
 
+        certmonger_data = None
+
         with open(full_path) as f:
 
             certs_from_path, old_path = None, None
@@ -146,6 +148,20 @@ of the certs. Check the docs for more info')
                 if row['flags'] != cert_flags:
                     helper.treat_cert_with_wrong_flags(self.logger, row, cert_flags)
                     return False
+
+                if row['certmonger'] == 'True':
+                    if certmonger_data is None:
+                        certmonger_data = helper.certmonger_list()
+
+                    is_monitoring = False
+                    for cert in certmonger_data:
+                        if row['name'] in cert['certificate']:
+                            is_monitoring = True
+                            break
+
+                    if not is_monitoring:
+                        # add log message
+                        return False
 
                 old_path = row['path']
 

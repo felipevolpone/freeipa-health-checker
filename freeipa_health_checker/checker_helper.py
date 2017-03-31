@@ -43,3 +43,45 @@ these flags: {expected}; but these: {cur_flags}"
                              expected=row['flags'], cur_flags=cert_flags)
 
     logger.error(message)
+
+
+def certmonger_list():
+    return None
+
+
+def process_certmonger_data(data):
+    data = data.replace('\t', '').splitlines()
+    certs_list = []
+    item = {}
+    first_line = True
+
+    for line in data:
+
+        if first_line:
+            first_line = False
+            continue
+
+        line = line.strip()
+
+        if not line:
+            continue
+
+        if line.startswith('Request ID'):
+            # eg: "Request ID '20170331122405':"
+
+            if any(item):
+                certs_list.append(item)
+
+            item = {}
+            item['Request ID'] = (line.split('Request ID')[1].strip().replace("'", "")
+                                      .replace(':', ''))
+            continue
+
+        line_splitted = line.split(':')
+        key = line_splitted[0].strip()
+        value = ''.join(line_splitted[1:]).replace("'", "")
+        item[key] = value.strip()
+
+    certs_list.append(item)
+
+    return certs_list
