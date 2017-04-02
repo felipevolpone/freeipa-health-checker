@@ -1,7 +1,7 @@
 
 import re
 from datetime import datetime
-from . import settings
+from . import settings, utils
 
 
 def extract_cert_name(cert):
@@ -45,11 +45,14 @@ these flags: {expected}; but these: {cur_flags}"
     logger.error(message)
 
 
-def certmonger_list():
-    return None
+def getcert_list():
+    command = 'getcert list'
+    output = utils.execute(command)
+    all_text = '\n'.join(output)
+    return process_getcert_data(all_text)
 
 
-def process_certmonger_data(data):
+def process_getcert_data(data):
     data = data.replace('\t', '').splitlines()
     certs_list = []
     item = {}

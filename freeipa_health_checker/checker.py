@@ -24,6 +24,8 @@ class HealthChecker(object):
         ck_path_certs = subparsers.add_parser('ck_path_and_flags')
         ck_path_certs.add_argument('--csv_file', help='CSV file with info of path and name \
 of the certs. Check the docs for more info')
+        ck_path_certs.add_argument('--ck-monitoring', help='Check if certmonger is monitoring the \
+certs', action='store_false')
 
         ck_kra = subparsers.add_parser('ck_kra_setup')
         ck_kra.add_argument('--dir', help='Where the kra dir should be found',
@@ -111,7 +113,7 @@ of the certs. Check the docs for more info')
 
         return certs_status
 
-    def ck_path_and_flags(self):
+    def ck_path_and_flags(self, getcert_output=None):
         """
         Method to check if the certificates listed on file certs_list.csv
         exists where they should exist and if they have the right trust flags.
@@ -125,7 +127,7 @@ of the certs. Check the docs for more info')
         else:
             full_path = get_file_full_path(settings.CERTS_LIST_FILE)
 
-        certmonger_data = None
+        getcert_data = getcert_output if getcert_output else None
 
         with open(full_path) as f:
 
@@ -149,12 +151,17 @@ of the certs. Check the docs for more info')
                     helper.treat_cert_with_wrong_flags(self.logger, row, cert_flags)
                     return False
 
-                if row['certmonger'] == 'True':
-                    if certmonger_data is None:
-                        certmonger_data = helper.certmonger_list()
+                old_path = row['path']
+
+                if not self.parsed_args.ck_monitoring:
+                    continue
+
+                if row['getcert'] == 'true' or row['getcert'] == 'True':
+                    if getcert_data is None:
+                        getcert_data = helper.getcert_list()
 
                     is_monitoring = False
-                    for cert in certmonger_data:
+                    for cert in getcert_data:
                         if row['name'] in cert['certificate']:
                             is_monitoring = True
                             break
@@ -163,7 +170,6 @@ of the certs. Check the docs for more info')
                         # add log message
                         return False
 
-                old_path = row['path']
 
         self.logger.info('Certificates checked successfully.')
         return True

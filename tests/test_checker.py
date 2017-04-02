@@ -1,6 +1,6 @@
 import unittest
 import os
-from freeipa_health_checker.checker import HealthChecker
+from freeipa_health_checker.checker import HealthChecker, helper as checker_helper
 from freeipa_health_checker import checker_helper as helper, settings
 
 
@@ -37,7 +37,8 @@ class TestHealthChecker(unittest.TestCase):
 
     def test_ck_path_and_flags(self):
         mock_file_path = self.path_mock_files + 'certs_list_mock.csv'
-        hc = HealthChecker(sys_args=['ck_path_and_flags', '--csv_file', mock_file_path])
+        hc = HealthChecker(sys_args=['ck_path_and_flags', '--csv_file', mock_file_path,
+                                     '--ck-monitoring'])
 
         certs = [('caSigningCert cert-pki-ca', 'CTu,Cu,Cu', False),
                  ('Server-Cert cert-pki-ca', 'u,u,u', False),
@@ -45,26 +46,17 @@ class TestHealthChecker(unittest.TestCase):
                  ('ocspSigningCert cert-pki-ca', 'u,u,u', True),
                  ('subsystemCert cert-pki-ca', 'u,u,u', False)]
 
-        def fake_certmonger_list_result():
-            with open(self.path_mock_files + 'certmonger_list_result.txt') as f:
-                return helper.process_certmonger_data(f.read())
-
-        helper.certmonger_list = fake_certmonger_list_result
-
         def create_csv_content(certs):
-            content = "path;name;flags;certmonger\n"
+            content = "path;name;flags;getcert\n"
 
-            for name, flags, certmonger in certs:
-                content += ("{path};{name};{flags};{certmonger}\n".format(flags=flags, name=name,
-                            path=self.path_mock_files, certmonger=certmonger))
+            for name, flags, getcert in certs:
+                content += ("{path};{name};{flags};{getcert}\n".format(flags=flags, name=name,
+                            path=self.path_mock_files, getcert=getcert))
 
-            return content
+            with open(mock_file_path, 'w+') as f:
+                f.writelines(content)
 
-        content = create_csv_content(certs)
-
-        with open(mock_file_path, 'w+') as f:
-            f.writelines(content)
-
+        create_csv_content(certs)
         self.assertEqual(True, hc.ck_path_and_flags())
 
         # checking in case that the cert is not found
@@ -77,21 +69,20 @@ class TestHealthChecker(unittest.TestCase):
 
         # checking the case that the cert has the wrong trust flags
         certs[0] = ('caSigningCert cert-pki-ca', 'u,u,u', False)
-        content = create_csv_content(certs)
-
-        with open(mock_file_path, 'w+') as f:
-            f.writelines(content)
+        create_csv_content(certs)
 
         self.assertEqual(False, hc.ck_path_and_flags())
 
-        # checking when the cert is not in the certmonger monitoring
+        # checking when the cert is not in the getcert monitoring
+        def fake_getcert_list_result():
+            with open(self.path_mock_files + 'getcert_list_result.txt') as f:
+                return helper.process_getcert_data(f.read())
+
         certs[0] = ('caSigningCert cert-pki-ca', 'CTu,Cu,Cu', True)
-        content = create_csv_content(certs)
+        create_csv_content(certs)
 
-        with open(mock_file_path, 'w+') as f:
-            f.writelines(content)
-
-        self.assertEqual(False, hc.ck_path_and_flags())
+        hc = HealthChecker(sys_args=['ck_path_and_flags', '--csv_file', mock_file_path])
+        self.assertEqual(False, hc.ck_path_and_flags(getcert_output=fake_getcert_list_result()))
 
     def test_ck_kra_setup(self):
         kra_path = self.path_mock_files + 'kra'
