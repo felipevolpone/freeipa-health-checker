@@ -1,6 +1,6 @@
 import unittest
 import os
-from freeipa_health_checker.checker import HealthChecker, helper as checker_helper
+from freeipa_health_checker.checker import HealthChecker
 from freeipa_health_checker import checker_helper as helper, settings
 
 

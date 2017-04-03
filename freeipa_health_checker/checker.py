@@ -11,9 +11,13 @@ class HealthChecker(object):
         self.sys_args = sys_args if sys_args else sys.argv[1:]
         self.logger = get_logger()
 
-        self.parser = argparse.ArgumentParser(description="IPA Health Checker")
+        self.parser = self.__register_cli()
+        self.parsed_args = self.parser.parse_args(self.sys_args)
 
-        subparsers = self.parser.add_subparsers(dest='command')
+    def __register_cli(self):
+        parser = argparse.ArgumentParser(description="IPA Health Checker")
+
+        subparsers = parser.add_subparsers(dest='command')
 
         list_nssdb = subparsers.add_parser('list_certs')
         list_nssdb.add_argument('path')
@@ -33,7 +37,7 @@ certs', action='store_false')
         ck_kra.add_argument('--cert', help='Where the kra cert should be found',
                             default=settings.KRA_DEFAULT_CERT_PATH)
 
-        self.parsed_args = self.parser.parse_args(self.sys_args)
+        return parser
 
     def run_cli(self):
         args = self.parser.parse_args(self.sys_args)
@@ -140,36 +144,19 @@ certs', action='store_false')
 
                 certs_names = [cert[0] for cert in certs_from_path]
 
-                if row['name'] not in certs_names:
-                    helper.treat_cert_not_found(self.logger, row)
-                    return False
+                is_in_path = helper.check_path(self.logger, row, certs_names)
+                if not is_in_path: return False
 
-                cert_index = certs_names.index(row['name'])
-                cert_flags = certs_from_path[cert_index][1]
+                has_flags = helper.check_flags(self.logger, row, certs_names, certs_from_path)
+                if not has_flags: return False
 
-                if row['flags'] != cert_flags:
-                    helper.treat_cert_with_wrong_flags(self.logger, row, cert_flags)
-                    return False
+                is_monitoring = False
+                if self.parsed_args.ck_monitoring:
+                    is_monitoring, getcert_data = helper.check_is_monitoring(self.logger, row,
+                                                                             getcert_data)
+                    if not is_monitoring: return False
 
                 old_path = row['path']
-
-                if not self.parsed_args.ck_monitoring:
-                    continue
-
-                if row['getcert'] == 'true' or row['getcert'] == 'True':
-                    if getcert_data is None:
-                        getcert_data = helper.getcert_list()
-
-                    is_monitoring = False
-                    for cert in getcert_data:
-                        if row['name'] in cert['certificate']:
-                            is_monitoring = True
-                            break
-
-                    if not is_monitoring:
-                        # add log message
-                        return False
-
 
         self.logger.info('Certificates checked successfully.')
         return True

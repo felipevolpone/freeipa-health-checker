@@ -26,23 +26,54 @@ def compare_cert_date(cert_details):
     return from_date < now and now < until_date
 
 
-def treat_cert_not_found(logger, row):
-    message = 'Certificate \"{name}\" should be on: {path}. '
-    message += 'Was found there: False. '
+def check_path(logger, row, certs_names):
+    if row['name'] not in certs_names:
+        message = 'Certificate \"{name}\" should be on: {path}. '
+        message += 'It was found there: False. '
 
-    message = message.format(name=row['name'], path=row['path'])
+        message = message.format(name=row['name'], path=row['path'])
 
-    logger.error(message)
+        logger.error(message)
+        return False
+
+    return True
 
 
-def treat_cert_with_wrong_flags(logger, row, cert_flags):
-    message = "Certificate \"{name}\" from expected path {path}, do not has \
+def check_flags(logger, row, certs_names, certs_from_path):
+    cert_index = certs_names.index(row['name'])
+    cert_flags = certs_from_path[cert_index][1]
+
+    if row['flags'] != cert_flags:
+        message = "Certificate \"{name}\" from expected path {path}, do not has \
 these flags: {expected}; but these: {cur_flags}"
 
-    message = message.format(name=row['name'], path=row['path'],
-                             expected=row['flags'], cur_flags=cert_flags)
+        message = message.format(name=row['name'], path=row['path'],
+                                 expected=row['flags'], cur_flags=cert_flags)
 
-    logger.error(message)
+        logger.error(message)
+        return False
+
+    return True
+
+
+def check_is_monitoring(logger, row, getcert_data):
+    if row['getcert'] == 'true' or row['getcert'] == 'True':
+
+        if getcert_data is None:
+            getcert_data = getcert_list()
+
+        is_monitoring = False
+        for cert in getcert_data:
+            if row['name'] in cert['certificate']:
+                is_monitoring = True
+                break
+
+        if not is_monitoring:
+            logger.error('The cert {name} should being monitored by certmonger'
+                         .format(name=row['name']))
+            return False, getcert_data
+
+    return True, getcert_data
 
 
 def getcert_list():
