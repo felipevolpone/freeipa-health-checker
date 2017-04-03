@@ -5,14 +5,13 @@
 ![Python Version](https://img.shields.io/badge/python-3.5-green.svg)
 
 ### What is the purpose of this tool
-The main goal of this tool is to provide verifications that can be done on a IPA or Dogtag
-environment; in order to help the users of these projects to have a feedback if some parts of the installation were done correctly.
+The main goal of this tool is to provide verifications that can be done on a [IPA](http://freeipa.org) or [Dogtag](http://pki.fedoraproject.org) environment; in order to help the users of these projects to have a feedback if some parts of the installation were done correctly.
 
 ### Main features until now
 * List certificates
 * Check if the certificates expired
-* Check if the certificates are on the right path and if they have the expected
-trust flags
+* Check if the certificates are on the right path, if they have the expected
+trust flags and check if certmonger is monitoring they. 
 
 ### How to use it
 1. Clone the project
