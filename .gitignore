@@ -89,5 +89,4 @@ ENV/
 .ropeproject
 
 tests/mock_files/certs_list_mock.csv
-tests/mock_files/getcert_list_result.txt
 tests/mock_files/kra
