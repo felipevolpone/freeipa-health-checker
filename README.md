@@ -11,7 +11,7 @@ The main goal of this tool is to provide verifications that can be done on a [IP
 * List certificates
 * Check if the certificates expired
 * Check if the certificates are on the right path, if they have the expected
-trust flags and check if certmonger is monitoring they. 
+trust flags and check if certmonger is monitoring the certs.
 
 ### How to use it
 1. Clone the project
