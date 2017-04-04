@@ -5,7 +5,7 @@
 ![Python Version](https://img.shields.io/badge/python-3.5-green.svg)
 
 ### What is the purpose of this tool
-The main goal of this tool is to provide verifications that can be done on a [IPA](http://freeipa.org) or [Dogtag](http://pki.fedoraproject.org) environment; in order to help the users of these projects to have a feedback if some parts of the installation were done correctly.
+The main goal of this tool is to provide verifications that can be done on a [FreeIPA](http://freeipa.org) or [Dogtag](http://pki.fedoraproject.org) environment; in order to help the users of these projects to have a feedback if some parts of the installation were done correctly.
 
 ### Main features until now
 * List certificates

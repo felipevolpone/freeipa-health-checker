@@ -57,7 +57,7 @@ these flags: {expected}; but these: {cur_flags}"
 
 
 def check_is_monitoring(logger, row, getcert_data):
-    if row['getcert'] == 'true' or row['getcert'] == 'True':
+    if row['monitored'] == 'true' or row['monitored'] == 'True':
 
         if getcert_data is None:
             getcert_data = getcert_list()

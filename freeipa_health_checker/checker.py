@@ -15,6 +15,10 @@ class HealthChecker(object):
         self.parsed_args = self.parser.parse_args(self.sys_args)
 
     def __register_cli(self):
+        """
+        Register all CLI commands and their arguments
+        """
+
         parser = argparse.ArgumentParser(description="IPA Health Checker")
 
         subparsers = parser.add_subparsers(dest='command')
@@ -25,11 +29,11 @@ class HealthChecker(object):
         certs_valid = subparsers.add_parser('certs_expired')
         certs_valid.add_argument('path')
 
-        ck_path_certs = subparsers.add_parser('ck_path_and_flags')
-        ck_path_certs.add_argument('--csv_file', help='CSV file with info of path and name \
+        ck_path_certs = subparsers.add_parser('full_check')
+        ck_path_certs.add_argument('--csv-file', help='CSV file with info of path and name \
 of the certs. Check the docs for more info')
-        ck_path_certs.add_argument('--ck-monitoring', help='Check if certmonger is monitoring the \
-certs', action='store_false')
+        ck_path_certs.add_argument('--no-monitoring', help='Use this to do not check if certmonger\
+is monitoring the certificates', action='store_false')
 
         ck_kra = subparsers.add_parser('ck_kra_setup')
         ck_kra.add_argument('--dir', help='Where the kra dir should be found',
@@ -117,7 +121,7 @@ certs', action='store_false')
 
         return certs_status
 
-    def ck_path_and_flags(self, getcert_output=None):
+    def full_check(self, getcert_output=None):
         """
         Method to check if the certificates listed on file certs_list.csv
         exists where they should exist and if they have the right trust flags.
@@ -125,11 +129,8 @@ certs', action='store_false')
         Returns: True or False
         """
 
-        full_path = None
-        if self.parsed_args.csv_file:
-            full_path = self.parsed_args.csv_file
-        else:
-            full_path = get_file_full_path(settings.CERTS_LIST_FILE)
+        full_path = (self.parsed_args.csv_file if self.parsed_args.csv_file
+                     else get_file_full_path(settings.CERTS_LIST_FILE))
 
         getcert_data = getcert_output if getcert_output else None
 
@@ -151,7 +152,7 @@ certs', action='store_false')
                 if not has_flags: return False
 
                 is_monitoring = False
-                if self.parsed_args.ck_monitoring:
+                if self.parsed_args.no_monitoring:
                     is_monitoring, getcert_data = helper.check_is_monitoring(self.logger, row,
                                                                              getcert_data)
                     if not is_monitoring: return False

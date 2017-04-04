@@ -1,4 +1,4 @@
-path;name;flags;getcert
+path;name;flags;monitored
 /etc/pki/pki-tomcat/alias;Server-Cert cert-pki-ca;u,u,u;True
 /etc/pki/pki-tomcat/alias;caSigningCert cert-pki-ca;CTu,Cu,Cu;True
 /etc/pki/pki-tomcat/alias;auditSigningCert cert-pki-ca;u,u,Pu;True

@@ -35,10 +35,10 @@ class TestHealthChecker(unittest.TestCase):
 
         self.assertEqual(expected, hc.certs_expired())
 
-    def test_ck_path_and_flags(self):
+    def test_full_check(self):
         mock_file_path = self.path_mock_files + 'certs_list_mock.csv'
-        hc = HealthChecker(sys_args=['ck_path_and_flags', '--csv_file', mock_file_path,
-                                     '--ck-monitoring'])
+        hc = HealthChecker(sys_args=['full_check', '--csv-file', mock_file_path,
+                                     '--no-monitoring'])
 
         certs = [('caSigningCert cert-pki-ca', 'CTu,Cu,Cu', False),
                  ('Server-Cert cert-pki-ca', 'u,u,u', False),
@@ -47,7 +47,7 @@ class TestHealthChecker(unittest.TestCase):
                  ('subsystemCert cert-pki-ca', 'u,u,u', False)]
 
         def create_csv_content(certs):
-            content = "path;name;flags;getcert\n"
+            content = "path;name;flags;monitored\n"
 
             for name, flags, getcert in certs:
                 content += ("{path};{name};{flags};{getcert}\n".format(flags=flags, name=name,
@@ -57,7 +57,7 @@ class TestHealthChecker(unittest.TestCase):
                 f.writelines(content)
 
         create_csv_content(certs)
-        self.assertEqual(True, hc.ck_path_and_flags())
+        self.assertEqual(True, hc.full_check())
 
         # checking in case that the cert is not found
         content = "/etc/pki/nssdb;subsystemCert cert-pki-ca;False"
@@ -65,13 +65,13 @@ class TestHealthChecker(unittest.TestCase):
         with open(mock_file_path, 'a') as f:
             f.writelines(content)
 
-        self.assertEqual(False, hc.ck_path_and_flags())
+        self.assertEqual(False, hc.full_check())
 
         # checking the case that the cert has the wrong trust flags
         certs[0] = ('caSigningCert cert-pki-ca', 'u,u,u', False)
         create_csv_content(certs)
 
-        self.assertEqual(False, hc.ck_path_and_flags())
+        self.assertEqual(False, hc.full_check())
 
         # checking when the cert is not in the getcert monitoring
         def fake_getcert_list_result():
@@ -81,8 +81,8 @@ class TestHealthChecker(unittest.TestCase):
         certs[0] = ('caSigningCert cert-pki-ca', 'CTu,Cu,Cu', True)
         create_csv_content(certs)
 
-        hc = HealthChecker(sys_args=['ck_path_and_flags', '--csv_file', mock_file_path])
-        self.assertEqual(False, hc.ck_path_and_flags(getcert_output=fake_getcert_list_result()))
+        hc = HealthChecker(sys_args=['full_check', '--csv-file', mock_file_path])
+        self.assertEqual(False, hc.full_check(getcert_output=fake_getcert_list_result()))
 
     def test_ck_kra_setup(self):
         kra_path = self.path_mock_files + 'kra'
