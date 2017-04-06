@@ -1,8 +1,10 @@
 
-import csv, argparse, sys, os
+import csv, argparse, sys, os, re
 from .utils import get_logger, execute, create_logger, get_file_full_path
 from . import checker_helper as helper
-from . import settings
+from . import settings, ldap_helper
+
+from ipalib import x509
 
 
 class HealthChecker(object):
@@ -18,7 +20,6 @@ class HealthChecker(object):
         """
         Register all CLI commands and their arguments
         """
-
         parser = argparse.ArgumentParser(description="IPA Health Checker")
 
         subparsers = parser.add_subparsers(dest='command')
@@ -34,6 +35,10 @@ class HealthChecker(object):
 of the certs. Check the docs for more info')
         ck_path_certs.add_argument('--no-monitoring', help='Use this to do not check if certmonger\
 is monitoring the certificates', action='store_false')
+
+        ck_ra_cert = subparsers.add_parser('ck_ra_cert_serialnumber')
+        ck_ra_cert.add_argument('--pem-dir', help='Path of pem file')
+        ck_ra_cert.add_argument('--nssdb-dir', help='Path of NSS database')
 
         ck_kra = subparsers.add_parser('ck_kra_setup')
         ck_kra.add_argument('--dir', help='Where the kra dir should be found',
@@ -185,6 +190,20 @@ is monitoring the certificates', action='store_false')
         self.logger.info(message)
 
         return result
+
+    def ck_ra_cert_serialnumber(self, cert_name='ipaCert'):
+        cert_serial_number = None
+
+        if self.parsed_args.pem_dir:
+            pem_cert_dir = self.parsed_args.pem_dir
+            certificate = x509.load_certificate_from_file(pem_cert_dir)
+            cert_serial_number = certificate.serial_number
+
+        if self.parsed_args.nssdb_dir:
+            cert_data = self._get_cert(self.parsed_args.nssdb_dir, cert_name)
+            cert_serial_number = int(re.findall('\d+', cert_data[3])[0])
+
+        return cert_serial_number == ldap_helper.get_ra_cert_serialnumber()
 
 
 if __name__ == '__main__':

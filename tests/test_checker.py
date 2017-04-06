@@ -1,7 +1,8 @@
 import unittest
 import os
 from freeipa_health_checker.checker import HealthChecker
-from freeipa_health_checker import checker_helper as helper, settings
+from freeipa_health_checker import checker_helper as helper
+from freeipa_health_checker import settings, ldap_helper
 
 
 class TestHealthChecker(unittest.TestCase):
@@ -118,3 +119,19 @@ class TestHealthChecker(unittest.TestCase):
         del cert_data[-1]
         result_expected = {'kra_in_expected_path': False, 'kra_cert_present': False}
         self.assertEqual(result_expected, hc.ck_kra_setup())
+
+    def test_ck_ra_cert_serialnumber(self):
+        expected_serialnumber = 3
+
+        def fake_ldap():
+            return expected_serialnumber
+
+        ldap_helper.get_ra_cert_serialnumber = fake_ldap
+
+        hc = HealthChecker(sys_args=['ck_ra_cert_serialnumber', '--nssdb-dir', self.path_mock_files])
+        self.assertEqual(True, hc.ck_ra_cert_serialnumber('Server-Cert cert-pki-ca'))
+
+        expected_serialnumber = 7
+        self.assertEqual(False, hc.ck_ra_cert_serialnumber('Server-Cert cert-pki-ca'))
+
+
