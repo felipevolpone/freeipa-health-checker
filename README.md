@@ -16,8 +16,8 @@ trust flags and check if certmonger is monitoring the certs.
 ### How to use it
 1. Clone the project
 ```bash
-git clone git@github.com:felipevolpone/ipa-health-checker.git
-cd ipa-health-checker;
+git clone https://github.com/felipevolpone/freeipa-health-checker.git
+cd freeipa-health-checker
 ```
 
 2. Install [certutil](https://fedoraproject.org/wiki/NSS_Tools_:_certutil)
@@ -28,11 +28,11 @@ yum install libnss3-tools
 
 3. Start using it:
 ```bash
-python -m ipa_health_checker.checker -h
-python -m ipa_health_checker.checker ck_kra_setup [--dir <path>] [--cert <path>]
-python -m ipa_health_checker.checker ck_path_and_flags [--csv_file <path>]
-python -m ipa_health_checker.checker list_certs <path>
-python -m ipa_health_checker.checker certs_expired <path>
+python -m freeipa_health_checker.checker -h
+python -m freeipa_health_checker.checker ck_kra_setup [--dir <path>] [--cert <path>]
+python -m freeipa_health_checker.checker ck_path_and_flags [--csv_file <path>]
+python -m freeipa_health_checker.checker list_certs <path>
+python -m freeipa_health_checker.checker certs_expired <path>
 ```
 
 ### Testing it
