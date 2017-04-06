@@ -30,7 +30,7 @@ yum install libnss3-tools
 ```bash
 python -m freeipa_health_checker.checker -h
 python -m freeipa_health_checker.checker ck_kra_setup [--dir <path>] [--cert <path>]
-python -m freeipa_health_checker.checker ck_path_and_flags [--csv_file <path>]
+python -m freeipa_health_checker.checker full_check [--csv_file <path>] [--no-monitoring]
 python -m freeipa_health_checker.checker list_certs <path>
 python -m freeipa_health_checker.checker certs_expired <path>
 ```
