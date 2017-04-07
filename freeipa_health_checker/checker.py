@@ -2,9 +2,7 @@
 import csv, argparse, sys, os, re
 from .utils import get_logger, execute, create_logger, get_file_full_path
 from . import checker_helper as helper
-from . import settings, ldap_helper
-
-from ipalib import x509
+from . import settings
 
 
 class HealthChecker(object):
@@ -192,6 +190,9 @@ is monitoring the certificates', action='store_false')
         return result
 
     def ck_ra_cert_serialnumber(self, cert_name='ipaCert'):
+        from . import ldap_helper
+        from ipalib import x509
+
         cert_serial_number = None
 
         if self.parsed_args.pem_dir:

@@ -120,6 +120,7 @@ class TestHealthChecker(unittest.TestCase):
         result_expected = {'kra_in_expected_path': False, 'kra_cert_present': False}
         self.assertEqual(result_expected, hc.ck_kra_setup())
 
+    @unittest.skipIf(os.environ.get('IS_TRAVIS'), 'travis does not have freeipa installed')
     def test_ck_ra_cert_serialnumber(self):
         expected_serialnumber = 3
 
