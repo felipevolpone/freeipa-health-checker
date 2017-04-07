@@ -2,7 +2,7 @@ import unittest
 import os
 from freeipa_health_checker.checker import HealthChecker
 from freeipa_health_checker import checker_helper as helper
-from freeipa_health_checker import settings, ldap_helper
+from freeipa_health_checker import settings
 
 
 class TestHealthChecker(unittest.TestCase):
@@ -122,6 +122,8 @@ class TestHealthChecker(unittest.TestCase):
 
     @unittest.skipIf(os.environ.get('IS_TRAVIS'), 'travis does not have freeipa installed')
     def test_ck_ra_cert_serialnumber(self):
+        from freeipa_health_checker import settings, ldap_helper
+
         expected_serialnumber = 3
 
         def fake_ldap():
@@ -129,10 +131,9 @@ class TestHealthChecker(unittest.TestCase):
 
         ldap_helper.get_ra_cert_serialnumber = fake_ldap
 
-        hc = HealthChecker(sys_args=['ck_ra_cert_serialnumber', '--nssdb-dir', self.path_mock_files])
+        hc = HealthChecker(sys_args=['ck_ra_cert_serialnumber', '--nssdb-dir',
+                           self.path_mock_files])
         self.assertEqual(True, hc.ck_ra_cert_serialnumber('Server-Cert cert-pki-ca'))
 
         expected_serialnumber = 7
         self.assertEqual(False, hc.ck_ra_cert_serialnumber('Server-Cert cert-pki-ca'))
-
-
