@@ -13,7 +13,7 @@ def extract_cert_name(cert):
     return None
 
 
-def compare_cert_date(cert_details):
+def parse_date_field(cert_details):
     valid_from, valid_until = cert_details[7], cert_details[8]
 
     valid_from = valid_from.split(': ')[1]
@@ -21,9 +21,8 @@ def compare_cert_date(cert_details):
 
     from_date = datetime.strptime(valid_from, settings.CERT_DATE_FORMAT)
     until_date = datetime.strptime(valid_until, settings.CERT_DATE_FORMAT)
-    now = datetime.today()
 
-    return from_date < now and now < until_date
+    return from_date, until_date
 
 
 def check_path(logger, row, certs_names):

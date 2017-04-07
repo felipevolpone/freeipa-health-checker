@@ -1,9 +1,7 @@
 
 import unittest
 import os
-from freeipa_health_checker.checker import HealthChecker
 from freeipa_health_checker import checker_helper as helper
-from datetime import datetime
 
 
 class TestHelper(unittest.TestCase):
@@ -11,18 +9,8 @@ class TestHelper(unittest.TestCase):
     path_mock_files = os.getcwd() + '/tests/mock_files/'
     maxDiff = None
 
-    def test_check_cert_date(self):
-        hc = HealthChecker(sys_args=['list_certs', self.path_mock_files])
-
-        cert_data = hc._get_cert(self.path_mock_files, 'Server-Cert cert-pki-ca')
-
-        self.assertEqual(True, helper.compare_cert_date(cert_data))
-
-        last_year = datetime.now().year - 1
-        cert_data[8] = 'Not After : Tue Mar 12 21:35:13 {}'.format(last_year)
-        self.assertEqual(False, helper.compare_cert_date(cert_data))
-
     def test_process_getcert_data(self):
+
         raw_data = """
 Request ID '20170331122404':
     status: MONITORING

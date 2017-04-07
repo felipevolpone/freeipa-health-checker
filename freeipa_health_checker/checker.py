@@ -1,5 +1,7 @@
 
 import csv, argparse, sys, os, re
+from datetime import datetime
+
 from .utils import get_logger, execute, create_logger, get_file_full_path
 from . import checker_helper as helper
 from . import settings
@@ -115,13 +117,23 @@ is monitoring the certificates', action='store_false')
 
         for cert_name, _ in cert_list:
             cert_details = self._get_cert(self.parsed_args.path, cert_name)
-            is_valid = helper.compare_cert_date(cert_details)
+            from_date, until_date = helper.parse_date_field(cert_details)
 
-            certs_status.append((cert_name, is_valid))
+            today = datetime.today()
+            status = False
 
-            self.logger.info('Certificate \"{}\" is expired: {}'.format(
-                cert_name, not is_valid))
+            if today > until_date:
+                self.logger.info('Certificate \"{}\" is expired. Period {} to {}'
+                                 .format(cert_name, from_date, until_date))
+            elif today < from_date:
+                self.logger.info('Certificate \"{}\" not valid yet. Period {} to {}'
+                                 .format(cert_name, from_date, until_date))
+            else:
+                status = True
 
+            certs_status.append((cert_name, status))
+
+        self.logger.info('Certificates checked')
         return certs_status
 
     def full_check(self, getcert_output=None):

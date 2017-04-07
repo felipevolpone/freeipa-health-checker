@@ -1,5 +1,6 @@
 import unittest
 import os
+from datetime import datetime
 from freeipa_health_checker.checker import HealthChecker
 from freeipa_health_checker import checker_helper as helper
 from freeipa_health_checker import settings
@@ -12,6 +13,7 @@ class TestHealthChecker(unittest.TestCase):
     command is installed on the system.
     """
 
+    maxDiff = None
     path_mock_files = os.getcwd() + '/tests/mock_files/'
 
     def test_list_certs(self):
@@ -26,14 +28,40 @@ class TestHealthChecker(unittest.TestCase):
         self.assertEqual(certs_list, hc.list_certs())
 
     def test_certs_expired(self):
-        hc = HealthChecker(sys_args=['certs_expired', self.path_mock_files])
 
-        expected = [('caSigningCert cert-pki-ca', True),
-                    ('Server-Cert cert-pki-ca', True),
-                    ('auditSigningCert cert-pki-ca', True),
-                    ('ocspSigningCert cert-pki-ca', True),
-                    ('subsystemCert cert-pki-ca', True)]
+        # mocking data and methods
+        current_year = datetime.now().year
+        cert = ['Certificate:', 'Data:', 'Version: 3 (0x2)', 'Serial Number: 10 (0xa)',
+                'Signature Algorithm: PKCS #1 SHA-256 With RSA Encryption',
+                'Issuer: "CN=Certificate Authority,O=IPA.EXAMPLE"',
+                'Validity:',
+                'Not Before: Sun Apr 02 14:53:02 ' + str(current_year - 1),
+                'Not After : Fri Apr 02 14:53:02 ' + str(current_year + 2)]
 
+        def fake_get_cert(x, y):
+            return cert
+
+        def fake_list_cert():
+            return [('caSigningCert cert-pki-ca', 'u,u,u,u')]
+
+        # a valid path is not used, because the method to get the certs from
+        # the path will be mocked
+        hc = HealthChecker(sys_args=['certs_expired', 'anything'])
+        hc._get_cert = fake_get_cert
+        hc.list_certs = fake_list_cert
+
+        # testing when is valid
+        expected = [('caSigningCert cert-pki-ca', True)]
+        self.assertEqual(expected, hc.certs_expired())
+
+        # testing when the certificate is not valid yet
+        cert[7] = 'Not Before: Sun Apr 02 14:53:02 ' + str(current_year + 2)
+        expected = [('caSigningCert cert-pki-ca', False)]
+        self.assertEqual(expected, hc.certs_expired())
+
+        # testing when the certificate expired
+        cert[8] = 'Not After: Sun Apr 02 14:53:02 ' + str(current_year - 2)
+        expected = [('caSigningCert cert-pki-ca', False)]
         self.assertEqual(expected, hc.certs_expired())
 
     def test_full_check(self):
