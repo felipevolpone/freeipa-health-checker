@@ -2,6 +2,7 @@
 import re
 from datetime import datetime
 from . import settings, utils
+from collections import namedtuple
 
 
 def extract_cert_name(cert):
@@ -42,12 +43,12 @@ def check_flags(logger, row, certs_names, certs_from_path):
     cert_index = certs_names.index(row['name'])
     cert_flags = certs_from_path[cert_index][1]
 
-    if row['flags'] != cert_flags:
+    if row['trustflags'] != cert_flags:
         message = "Certificate \"{name}\" from expected path {path}, do not has \
 these flags: {expected}; but these: {cur_flags}"
 
         message = message.format(name=row['name'], path=row['path'],
-                                 expected=row['flags'], cur_flags=cert_flags)
+                                 expected=row['trustflags'], cur_flags=cert_flags)
 
         logger.error(message)
         return False
@@ -56,7 +57,7 @@ these flags: {expected}; but these: {cur_flags}"
 
 
 def check_is_monitoring(logger, row, getcert_data):
-    if row['monitored'] == 'true' or row['monitored'] == 'True':
+    if row.get('monitored') == 'true':
 
         if getcert_data is None:
             getcert_data = getcert_list()
@@ -118,3 +119,10 @@ def process_getcert_data(data):
     certs_list.append(item)
 
     return certs_list
+
+
+Cert = namedtuple('Cert', 'from_date until_date')
+
+
+def parse_cert_text(cert_text):
+    return Cert(from_date=cert_text[7], until_date=cert_text[8])

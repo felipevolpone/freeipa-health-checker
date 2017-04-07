@@ -1,0 +1,26 @@
+
+certs:
+  - path: '/home/fbarreto/projects/vm-fedora/freeipa-health-check/tests/mock_files/'
+    name: 'caSigningCert cert-pki-ca'
+    trustflags: 'CTu,Cu,Cu'
+    monitored: false
+
+  - path: '/home/fbarreto/projects/vm-fedora/freeipa-health-check/tests/mock_files/'
+    name: 'Server-Cert cert-pki-ca'
+    trustflags: 'u,u,u'
+    monitored: false
+
+  - path: '/home/fbarreto/projects/vm-fedora/freeipa-health-check/tests/mock_files/'
+    name: 'auditSigningCert cert-pki-ca'
+    trustflags: 'u,u,Pu'
+    monitored: true
+
+  - path: '/home/fbarreto/projects/vm-fedora/freeipa-health-check/tests/mock_files/'
+    name: 'ocspSigningCert cert-pki-ca'
+    trustflags: 'u,u,u'
+    monitored: true
+
+  - path: '/home/fbarreto/projects/vm-fedora/freeipa-health-check/tests/mock_files/'
+    name: 'subsystemCert cert-pki-ca'
+    trustflags: 'u,u,u'
+    monitored: false

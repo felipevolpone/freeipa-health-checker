@@ -1,10 +1,19 @@
 
-import csv, argparse, sys, os, re
+import csv, argparse, sys, os, re, yaml
 from datetime import datetime
 
 from .utils import get_logger, execute, create_logger, get_file_full_path
 from . import checker_helper as helper
 from . import settings
+
+
+class Log(object):
+
+    def __init__(self):
+        self.logs = []
+
+    def append(self, item):
+        self.logs.append(item)
 
 
 class HealthChecker(object):
@@ -33,8 +42,6 @@ class HealthChecker(object):
         ck_path_certs = subparsers.add_parser('full_check')
         ck_path_certs.add_argument('--csv-file', help='CSV file with info of path and name \
 of the certs. Check the docs for more info')
-        ck_path_certs.add_argument('--no-monitoring', help='Use this to do not check if certmonger\
-is monitoring the certificates', action='store_false')
 
         ck_ra_cert = subparsers.add_parser('ck_ra_cert_serialnumber')
         ck_ra_cert.add_argument('--pem-dir', help='Path of pem file')
@@ -54,7 +61,13 @@ is monitoring the certificates', action='store_false')
             self.logger.error('command not found')
             return
 
-        getattr(self, args.command)()
+        from_func = getattr(self, args.command)()
+        if isinstance(from_func, Log):
+            for message in from_func.logs:
+                self.logger.info(message)
+            return from_func.logs
+
+        return from_func
 
     def list_certs(self, path=None):
         """
@@ -143,39 +156,37 @@ is monitoring the certificates', action='store_false')
 
         Returns: True or False
         """
+        logs = Log()
 
         full_path = (self.parsed_args.csv_file if self.parsed_args.csv_file
                      else get_file_full_path(settings.CERTS_LIST_FILE))
 
         getcert_data = getcert_output if getcert_output else None
 
+        certs_data = None
         with open(full_path) as f:
+            certs_data = yaml.load(f.read())
 
-            certs_from_path, old_path = None, None
+        for row in certs_data['certs']:
+            certs_from_path = self.list_certs(row['path'])
+            certs_names = [cert[0] for cert in certs_from_path]
 
-            for row in csv.DictReader(f, delimiter=';'):
+            is_in_path = helper.check_path(self.logger, row, certs_names)
 
-                if row['path'] != old_path:
-                    certs_from_path = self.list_certs(row['path'])
-
-                certs_names = [cert[0] for cert in certs_from_path]
-
-                is_in_path = helper.check_path(self.logger, row, certs_names)
-                if not is_in_path: return False
-
+            has_flags = False
+            if is_in_path:
                 has_flags = helper.check_flags(self.logger, row, certs_names, certs_from_path)
-                if not has_flags: return False
 
-                is_monitoring = False
-                if self.parsed_args.no_monitoring:
-                    is_monitoring, getcert_data = helper.check_is_monitoring(self.logger, row,
-                                                                             getcert_data)
-                    if not is_monitoring: return False
+            is_monitoring = False
+            is_monitoring, getcert_data = helper.check_is_monitoring(self.logger, row,
+                                                                     getcert_data)
 
-                old_path = row['path']
+            if not is_in_path or not is_monitoring or not has_flags:
+                logs.append(('Certificate {} in path: {}, flags: {}, monitored: {}'
+                             .format(row['name'], is_in_path, has_flags, is_monitoring)))
 
-        self.logger.info('Certificates checked successfully.')
-        return True
+        logs.append(('Certificates checked successfully.'))
+        return logs
 
     def ck_kra_setup(self):
         path_to_kra = self.parsed_args.dir
