@@ -149,7 +149,7 @@ of the certs. Check the docs for more info')
         self.logger.info('Certificates checked')
         return certs_status
 
-    def full_check(self, getcert_output=None):
+    def full_check(self):
         """
         Method to check if the certificates listed on file certs_list.csv
         exists where they should exist and if they have the right trust flags.
@@ -161,8 +161,6 @@ of the certs. Check the docs for more info')
         full_path = (self.parsed_args.csv_file if self.parsed_args.csv_file
                      else get_file_full_path(settings.CERTS_LIST_FILE))
 
-        getcert_data = getcert_output if getcert_output else None
-
         certs_data = None
         with open(full_path) as f:
             certs_data = yaml.load(f.read())
@@ -171,15 +169,13 @@ of the certs. Check the docs for more info')
             certs_from_path = self.list_certs(row['path'])
             certs_names = [cert[0] for cert in certs_from_path]
 
-            is_in_path = helper.check_path(self.logger, row, certs_names)
+            is_in_path = helper.check_path(logs, row, certs_names)
 
             has_flags = False
             if is_in_path:
-                has_flags = helper.check_flags(self.logger, row, certs_names, certs_from_path)
+                has_flags = helper.check_flags(logs, row, certs_names, certs_from_path)
 
-            is_monitoring = False
-            is_monitoring, getcert_data = helper.check_is_monitoring(self.logger, row,
-                                                                     getcert_data)
+            is_monitoring, getcert_data = helper.check_is_monitoring(logs, row)
 
             if not is_in_path or not is_monitoring or not has_flags:
                 logs.append(('Certificate {} in path: {}, flags: {}, monitored: {}'

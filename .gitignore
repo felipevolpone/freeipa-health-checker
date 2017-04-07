@@ -88,5 +88,6 @@ ENV/
 # Rope project settings
 .ropeproject
 
+# Files used to mock some data when running the tests
 tests/mock_files/certs_list_mock.yaml
 tests/mock_files/kra

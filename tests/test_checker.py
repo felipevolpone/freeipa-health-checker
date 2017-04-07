@@ -3,7 +3,7 @@ import os
 import yaml
 from datetime import datetime
 from freeipa_health_checker.checker import HealthChecker
-from freeipa_health_checker import checker_helper as helper
+from freeipa_health_checker import checker_helper
 from freeipa_health_checker import settings
 
 
@@ -69,7 +69,7 @@ class TestHealthChecker(unittest.TestCase):
         mock_file_path = self.path_mock_files + 'certs_list_mock.yaml'
         hc = HealthChecker(sys_args=['full_check', '--csv-file', mock_file_path])
 
-        certs = {'certs': [
+        original_certs = {'certs': [
             {'path': self.path_mock_files,
              'monitored': False,
              'name': 'caSigningCert cert-pki-ca',
@@ -96,29 +96,36 @@ class TestHealthChecker(unittest.TestCase):
             with open(mock_file_path, 'w+') as f:
                 yaml.dump(certs, f)
 
-        create_config_file(certs)
+        # the success case. nothing fails
+        create_config_file(original_certs)
         self.assertEqual(1, len(hc.full_check().logs))
 
-        # checking in case that the cert is not found
+        # checking in case when the cert is not found
+        import copy
+        certs = copy.deepcopy(original_certs)
         certs['certs'][0]['path'] = '/tmp'
         create_config_file(certs)
-        self.assertEqual(2, len(hc.full_check().logs))
+        self.assertEqual(3, len(hc.full_check().logs))
 
         # checking the case that the cert has the wrong trust flags
-        certs[0] = ('caSigningCert cert-pki-ca', 'u,u,u', False)
+        certs = copy.deepcopy(original_certs)
+        certs['certs'][0]['trustflags'] = 'u,u,u'
         create_config_file(certs)
-        self.assertEqual(2, len(hc.full_check().logs))
+        self.assertEqual(3, len(hc.full_check().logs))
 
         # checking when the cert is not in the getcert monitoring
         def fake_getcert_list_result():
             with open(self.path_mock_files + 'getcert_list_result.txt') as f:
-                return helper.process_getcert_data(f.read())
+                return checker_helper.process_getcert_data(f.read())
 
-        certs[0] = ('caSigningCert cert-pki-ca', 'CTu,Cu,Cu', True)
+        certs = copy.deepcopy(original_certs)
+        certs['certs'][0]['monitored'] = True
         create_config_file(certs)
 
         hc = HealthChecker(sys_args=['full_check', '--csv-file', mock_file_path])
-        self.assertEqual(2, len(hc.full_check(getcert_output=fake_getcert_list_result()).logs))
+        checker_helper.getcert_list = fake_getcert_list_result
+
+        self.assertEqual(3, len(hc.full_check().logs))
 
     def test_ck_kra_setup(self):
         kra_path = self.path_mock_files + 'kra'

@@ -26,20 +26,20 @@ def parse_date_field(cert_details):
     return from_date, until_date
 
 
-def check_path(logger, row, certs_names):
+def check_path(logs, row, certs_names):
     if row['name'] not in certs_names:
         message = 'Certificate \"{name}\" should be on: {path}. '
         message += 'It was found there: False. '
 
         message = message.format(name=row['name'], path=row['path'])
 
-        logger.error(message)
+        logs.append(message)
         return False
 
     return True
 
 
-def check_flags(logger, row, certs_names, certs_from_path):
+def check_flags(logs, row, certs_names, certs_from_path):
     cert_index = certs_names.index(row['name'])
     cert_flags = certs_from_path[cert_index][1]
 
@@ -50,30 +50,28 @@ these flags: {expected}; but these: {cur_flags}"
         message = message.format(name=row['name'], path=row['path'],
                                  expected=row['trustflags'], cur_flags=cert_flags)
 
-        logger.error(message)
+        logs.append(message)
         return False
 
     return True
 
 
-def check_is_monitoring(logger, row, getcert_data):
-    if row.get('monitored') == 'true':
-
-        if getcert_data is None:
-            getcert_data = getcert_list()
-
+def check_is_monitoring(logs, row):
+    if row.get('monitored'):
+        getcert_data = getcert_list()
         is_monitoring = False
+
         for cert in getcert_data:
             if row['name'] in cert['certificate']:
                 is_monitoring = True
                 break
 
         if not is_monitoring:
-            logger.error('The cert {name} should being monitored by certmonger'
-                         .format(name=row['name']))
+            logs.append('The cert {name} should being monitored by certmonger'
+                        .format(name=row['name']))
             return False, getcert_data
 
-    return True, getcert_data
+    return True, None
 
 
 def getcert_list():
