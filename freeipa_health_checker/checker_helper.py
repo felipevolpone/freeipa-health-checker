@@ -116,22 +116,17 @@ def parse_cert_text(cert_text):
 
 class Log(object):
 
-    INFO = 'INFO'
-    DEBUG = 'DEBUG'
-    ERROR = 'ERROR'
-
     def __init__(self):
         self.logs = []
 
     def info(self, item):
-        self.__append(item, self.INFO)
+        self.__append(item, 'info')
 
     def debug(self, item):
-        self.__append(item, self.DEBUG)
+        self.__append(item, 'debug')
 
     def error(self, item):
-        self.__append(item, self.ERROR)
+        self.__append(item, 'error')
 
     def __append(self, item, status):
         self.logs.append((item, status))
-

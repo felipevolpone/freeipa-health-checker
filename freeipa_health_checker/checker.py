@@ -22,26 +22,23 @@ class HealthChecker(object):
         """
         parser = argparse.ArgumentParser(description="IPA Health Checker")
 
+        parent_parser = argparse.ArgumentParser(add_help=False)
+        parent_parser.add_argument('--config-file')
+
         subparsers = parser.add_subparsers(dest='command')
 
-        list_nssdb = subparsers.add_parser('list_certs')
+        list_nssdb = subparsers.add_parser('list_certs', parents=[parent_parser])
         list_nssdb.add_argument('path')
 
-        subparsers.add_parser('certs_expired')
+        subparsers.add_parser('certs_expired', parents=[parent_parser])
 
-        ck_path_certs = subparsers.add_parser('full_check')
-        ck_path_certs.add_argument('--config-file', help='A YAML file with info of path and name \
-of the certs. Check the docs for more info')
+        subparsers.add_parser('full_check', parents=[parent_parser])
 
-        ck_ra_cert = subparsers.add_parser('ck_ra_cert_serialnumber')
+        ck_ra_cert = subparsers.add_parser('ck_ra_cert_serialnumber', parents=[parent_parser])
         ck_ra_cert.add_argument('--pem-dir', help='Path of pem file')
         ck_ra_cert.add_argument('--nssdb-dir', help='Path of NSS database')
 
-        ck_kra = subparsers.add_parser('ck_kra_setup')
-        ck_kra.add_argument('--dir', help='Where the kra dir should be found',
-                            default=settings.KRA_DEFAULT_DIR_PATH)
-        ck_kra.add_argument('--cert', help='Where the kra cert should be found',
-                            default=settings.KRA_DEFAULT_CERT_PATH)
+        subparsers.add_parser('ck_kra_setup', parents=[parent_parser])
 
         return parser
 
@@ -101,6 +98,20 @@ of the certs. Check the docs for more info')
 
         return execute(command)
 
+    def __read_certs_config_file(self):
+        config_data = None
+
+        full_path = None
+
+        if self.parsed_args.config_file:
+            full_path = self.parsed_args.config_file
+        else:
+            full_path = get_file_full_path(settings.CERTS_CONFIG_FILE)
+
+        with open(full_path) as f:
+            config_data = yaml.load(f.read())
+        return config_data
+
     def certs_expired(self):
         """
         Method to check if the certificates are expired or are not valid yet.
@@ -115,12 +126,7 @@ of the certs. Check the docs for more info')
         """
 
         certs_status = []
-
-        full_path = get_file_full_path(settings.CERTS_CONFIG_FILE)
-
-        config_data = None
-        with open(full_path) as f:
-            config_data = yaml.load(f.read())
+        config_data = self.__read_certs_config_file()
 
         for item in config_data['certs_expired']:
             certs_status += self.__check_certs_validity_in_path(item['path'])
@@ -162,14 +168,9 @@ of the certs. Check the docs for more info')
         """
         logs = Log()
 
-        full_path = (self.parsed_args.config_file if self.parsed_args.config_file
-                     else get_file_full_path(settings.CERTS_CONFIG_FILE))
+        config_data = self.__read_certs_config_file()
 
-        certs_data = None
-        with open(full_path) as f:
-            certs_data = yaml.load(f.read())
-
-        for row in certs_data['certs']:
+        for row in config_data['certs']:
             certs_from_path = self.list_certs(row['path'])
             certs_names = [cert[0] for cert in certs_from_path]
 
@@ -192,14 +193,16 @@ of the certs. Check the docs for more info')
             {'kra_in_expected_path': False, 'kra_cert_present': False}
         """
 
-        path_to_kra = self.parsed_args.dir
-
         result = {'kra_in_expected_path': False, 'kra_cert_present': False}
+
+        config_data = self.__read_certs_config_file()
+        path_to_kra = config_data['kra_setup']['kra_dir']
+        cert_nssdb_path = config_data['kra_setup']['cert_path']
 
         if os.path.exists(path_to_kra) and os.path.isdir(path_to_kra):
             result['kra_in_expected_path'] = True
 
-        certs_from_path = self.list_certs(self.parsed_args.cert)
+        certs_from_path = self.list_certs(cert_nssdb_path)
         certs_names = [cert[0] for cert in certs_from_path]
 
         kra_certs = filter(lambda cert: 'kra' in cert.lower(), certs_names)
@@ -226,7 +229,15 @@ of the certs. Check the docs for more info')
             cert_data = self._get_cert(self.parsed_args.nssdb_dir, cert_name)
             cert_serial_number = int(re.findall('\d+', cert_data[3])[0])
 
-        return cert_serial_number == ldap_helper.get_ra_cert_serialnumber()
+        ldap_serialnumber = ldap_helper.get_ra_cert_serialnumber()
+        are_equal = cert_serial_number == ldap_serialnumber
+
+        if not are_equal:
+            self.logger.error(messages.ra_cert_different(cert_serial_number, ldap_serialnumber))
+        else:
+            self.logger.info(messages.check_done())
+
+        return are_equal
 
 
 if __name__ == '__main__':

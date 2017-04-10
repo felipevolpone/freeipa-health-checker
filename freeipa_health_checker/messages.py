@@ -24,9 +24,14 @@ def certificate_expired(cert_name, from_date, until_date):
 
 def certificate_not_valid_yet(cert_name, from_date, until_date):
     return 'Certificate \"{}\" not valid yet. Period {} to {}'.format(cert_name,
-           from_date, until_date)
+                                                                      from_date, until_date)
 
 
 def kra_status(kra_in_expected_path, kra_cert_present):
     return 'KRA is installed: {installed}. Cert was found: {cert_found}'.format(
            installed=kra_in_expected_path, cert_found=kra_cert_present)
+
+
+def ra_cert_different(cert_serial_number, ldap_serialnumber):
+    return ('Serial Number from RA Cert is \"{}\" in the local certificate and \"{}\" in LDAP'
+            .format(cert_serial_number, ldap_serialnumber))

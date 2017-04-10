@@ -27,3 +27,7 @@ certs:
 
 certs_expired:
     - path: '/etc/pki/pki-tomcat/alias'
+
+kra_setup:
+    kra_dir: '/etc/pki/pki-tomcat/kra'
+    cert_path: '/etc/pki/pki-tomcat/alias'
