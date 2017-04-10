@@ -5,5 +5,6 @@ setup(
     description="freeipa-health-checker",
     url="http://github.com/felipevolpone/freeipa-health-checker",
     packages=find_packages(exclude=['tests']),
+    install_requires=['PyYAML'],
 )
 
