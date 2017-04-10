@@ -1,18 +1,10 @@
-import unittest
-import os
-import yaml
+import unittest, os, yaml
 from datetime import datetime
 from freeipa_health_checker.checker import HealthChecker
-from freeipa_health_checker import checker_helper
-from freeipa_health_checker import settings
+from freeipa_health_checker import checker_helper, settings
 
 
 class TestHealthChecker(unittest.TestCase):
-    """
-    These unit tests are actually integreation tests that run
-    without mocks. So, it's expected that the certutil
-    command is installed on the system.
-    """
 
     maxDiff = None
     path_mock_files = os.getcwd() + '/tests/mock_files/'
@@ -29,7 +21,6 @@ class TestHealthChecker(unittest.TestCase):
         self.assertEqual(certs_list, hc.list_certs())
 
     def test_certs_expired(self):
-
         # mocking data and methods
         current_year = datetime.now().year
         cert = ['Certificate:', 'Data:', 'Version: 3 (0x2)', 'Serial Number: 10 (0xa)',
@@ -42,12 +33,12 @@ class TestHealthChecker(unittest.TestCase):
         def fake_get_cert(x, y):
             return cert
 
-        def fake_list_cert():
+        def fake_list_cert(path=None):
             return [('caSigningCert cert-pki-ca', 'u,u,u,u')]
 
         # a valid path is not used, because the method to get the certs from
         # the path will be mocked
-        hc = HealthChecker(sys_args=['certs_expired', 'anything'])
+        hc = HealthChecker(sys_args=['certs_expired'])
         hc._get_cert = fake_get_cert
         hc.list_certs = fake_list_cert
 
@@ -92,6 +83,13 @@ class TestHealthChecker(unittest.TestCase):
              'trustflags': 'u,u,u'}
         ]}
 
+        # checking when the cert is not in the getcert monitoring
+        def fake_getcert_list_result():
+            with open(self.path_mock_files + 'getcert_list_result.txt') as f:
+                return checker_helper.process_getcert_data(f.read())
+
+        checker_helper.getcert_list = fake_getcert_list_result
+
         def create_config_file(certs):
             with open(mock_file_path, 'w+') as f:
                 yaml.dump(certs, f)
@@ -113,18 +111,11 @@ class TestHealthChecker(unittest.TestCase):
         create_config_file(certs)
         self.assertEqual(2, len(hc.full_check().logs))
 
-        # checking when the cert is not in the getcert monitoring
-        def fake_getcert_list_result():
-            with open(self.path_mock_files + 'getcert_list_result.txt') as f:
-                return checker_helper.process_getcert_data(f.read())
-
         certs = copy.deepcopy(original_certs)
         certs['certs'][0]['monitored'] = True
         create_config_file(certs)
 
         hc = HealthChecker(sys_args=['full_check', '--config-file', mock_file_path])
-        checker_helper.getcert_list = fake_getcert_list_result
-
         self.assertEqual(2, len(hc.full_check().logs))
 
     def test_ck_kra_setup(self):

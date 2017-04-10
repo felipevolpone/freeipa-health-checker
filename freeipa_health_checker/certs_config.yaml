@@ -24,3 +24,6 @@ certs:
     name: 'subsystemCert cert-pki-ca'
     trustflags: 'u,u,u'
     monitored: false
+
+certs_expired:
+    - path: '/etc/pki/pki-tomcat/alias'

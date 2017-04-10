@@ -3,9 +3,8 @@ import argparse, sys, os, re, yaml
 from datetime import datetime
 
 from .utils import get_logger, execute, create_logger, get_file_full_path
-from . import checker_helper as helper
 from .checker_helper import Log
-from . import settings, messages
+from . import settings, messages, checker_helper as helper
 
 
 class HealthChecker(object):
@@ -28,8 +27,7 @@ class HealthChecker(object):
         list_nssdb = subparsers.add_parser('list_certs')
         list_nssdb.add_argument('path')
 
-        certs_valid = subparsers.add_parser('certs_expired')
-        certs_valid.add_argument('path')
+        subparsers.add_parser('certs_expired')
 
         ck_path_certs = subparsers.add_parser('full_check')
         ck_path_certs.add_argument('--config-file', help='A YAML file with info of path and name \
@@ -105,8 +103,8 @@ of the certs. Check the docs for more info')
 
     def certs_expired(self):
         """
-        Method to check if the certificates in a given path
-        expired  (if they expiration date are valid).
+        Method to check if the certificates are expired or are not valid yet.
+        This is done looking for the certs_expired field in the certs_list.yaml file.
 
         Returns:
             A list of tuples where which tuple has the name of the
@@ -116,28 +114,43 @@ of the certs. Check the docs for more info')
                  ('Server-Cert cert-pki-ca', False)]
         """
 
-        cert_list = self.list_certs()
-
         certs_status = []
 
+        full_path = get_file_full_path(settings.CERTS_CONFIG_FILE)
+
+        config_data = None
+        with open(full_path) as f:
+            config_data = yaml.load(f.read())
+
+        for item in config_data['certs_expired']:
+            certs_status += self.__check_certs_validity_in_path(item['path'])
+
+        self.logger.info(messages.check_done())
+        return certs_status
+
+    def __check_certs_validity_in_path(self, path):
+
+        certs_status = []
+        cert_list = self.list_certs(path=path)
+
         for cert_name, _ in cert_list:
-            cert_details = self._get_cert(self.parsed_args.path, cert_name)
+            cert_details = self._get_cert(path, cert_name)
             from_date, until_date = helper.parse_date_field(cert_details)
 
             today = datetime.today()
             status = False
 
             if today > until_date:
-                self.logger.info(messages.certificate_expired(cert_name, from_date, until_date))
+                self.logger.error(messages.certificate_expired(cert_name, from_date, until_date))
+
             elif today < from_date:
-                self.logger.info(messages.certificate_not_valid_yet(cert_name, from_date,
-                                 until_date))
+                self.logger.error(messages.certificate_not_valid_yet(cert_name, from_date,
+                                  until_date))
             else:
                 status = True
 
             certs_status.append((cert_name, status))
 
-        self.logger.info(messages.check_done())
         return certs_status
 
     def full_check(self):
@@ -150,7 +163,7 @@ of the certs. Check the docs for more info')
         logs = Log()
 
         full_path = (self.parsed_args.config_file if self.parsed_args.config_file
-                     else get_file_full_path(settings.CERTS_LIST_FILE))
+                     else get_file_full_path(settings.CERTS_CONFIG_FILE))
 
         certs_data = None
         with open(full_path) as f:
