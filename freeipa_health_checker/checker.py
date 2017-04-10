@@ -1,5 +1,5 @@
 
-import csv, argparse, sys, os, re, yaml
+import argparse, sys, os, re, yaml
 from datetime import datetime
 
 from .utils import get_logger, execute, create_logger, get_file_full_path
@@ -142,7 +142,7 @@ of the certs. Check the docs for more info')
 
     def full_check(self):
         """
-        Method to check if the certificates listed on file certs_list.csv
+        Method to check if the certificates listed on file certs_list.yaml
         exists where they should exist and if they have the right trust flags.
 
         Returns: A list of logs that will be printed on the run_cli function
