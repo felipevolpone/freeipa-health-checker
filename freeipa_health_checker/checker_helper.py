@@ -1,7 +1,7 @@
 
 import re
 from datetime import datetime
-from . import settings, utils
+from . import settings, utils, messages
 from collections import namedtuple
 
 
@@ -28,12 +28,7 @@ def parse_date_field(cert_details):
 
 def check_path(logs, row, certs_names):
     if row['name'] not in certs_names:
-        message = 'Certificate \"{name}\" should be on: {path}. '
-        message += 'It was found there: False. '
-
-        message = message.format(name=row['name'], path=row['path'])
-
-        logs.append(message)
+        logs.error(messages.cert_not_in_path(row['name'], row['path']))
         return False
 
     return True
@@ -44,13 +39,9 @@ def check_flags(logs, row, certs_names, certs_from_path):
     cert_flags = certs_from_path[cert_index][1]
 
     if row['trustflags'] != cert_flags:
-        message = "Certificate \"{name}\" from expected path {path}, do not has \
-these flags: {expected}; but these: {cur_flags}"
-
-        message = message.format(name=row['name'], path=row['path'],
-                                 expected=row['trustflags'], cur_flags=cert_flags)
-
-        logs.append(message)
+        message = messages.without_trustflags(row['name'], row['path'], row['trustflags'],
+                                              cert_flags)
+        logs.error(message)
         return False
 
     return True
@@ -67,11 +58,8 @@ def check_is_monitoring(logs, row):
                 break
 
         if not is_monitoring:
-            logs.append('The cert {name} should being monitored by certmonger'
-                        .format(name=row['name']))
-            return False, getcert_data
-
-    return True, None
+            logs.error(messages.monitored_by_certmonger(row['name']))
+            return
 
 
 def getcert_list():

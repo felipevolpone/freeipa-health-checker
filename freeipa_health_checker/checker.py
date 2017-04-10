@@ -4,16 +4,29 @@ from datetime import datetime
 
 from .utils import get_logger, execute, create_logger, get_file_full_path
 from . import checker_helper as helper
-from . import settings
+from . import settings, messages
 
 
 class Log(object):
 
+    INFO = 'INFO'
+    DEBUG = 'DEBUG'
+    ERROR = 'ERROR'
+
     def __init__(self):
         self.logs = []
 
-    def append(self, item):
-        self.logs.append(item)
+    def info(self, item):
+        self.__append(item, self.INFO)
+
+    def debug(self, item):
+        self.__append(item, self.DEBUG)
+
+    def error(self, item):
+        self.__append(item, self.ERROR)
+
+    def __append(self, item, status):
+        self.logs.append((item, status))
 
 
 class HealthChecker(object):
@@ -40,7 +53,7 @@ class HealthChecker(object):
         certs_valid.add_argument('path')
 
         ck_path_certs = subparsers.add_parser('full_check')
-        ck_path_certs.add_argument('--csv-file', help='CSV file with info of path and name \
+        ck_path_certs.add_argument('--config-file', help='A YAML file with info of path and name \
 of the certs. Check the docs for more info')
 
         ck_ra_cert = subparsers.add_parser('ck_ra_cert_serialnumber')
@@ -63,8 +76,8 @@ of the certs. Check the docs for more info')
 
         from_func = getattr(self, args.command)()
         if isinstance(from_func, Log):
-            for message in from_func.logs:
-                self.logger.info(message)
+            for message, status in from_func.logs:
+                getattr(self.logger, status)(message)
             return from_func.logs
 
         return from_func
@@ -136,17 +149,16 @@ of the certs. Check the docs for more info')
             status = False
 
             if today > until_date:
-                self.logger.info('Certificate \"{}\" is expired. Period {} to {}'
-                                 .format(cert_name, from_date, until_date))
+                self.logger.info(messages.certificate_expired(cert_name, from_date, until_date))
             elif today < from_date:
-                self.logger.info('Certificate \"{}\" not valid yet. Period {} to {}'
-                                 .format(cert_name, from_date, until_date))
+                self.logger.info(messages.certificate_not_valid_yet(cert_name, from_date,
+                                 until_date))
             else:
                 status = True
 
             certs_status.append((cert_name, status))
 
-        self.logger.info('Certificates checked')
+        self.logger.info(messages.check_done())
         return certs_status
 
     def full_check(self):
@@ -154,11 +166,11 @@ of the certs. Check the docs for more info')
         Method to check if the certificates listed on file certs_list.csv
         exists where they should exist and if they have the right trust flags.
 
-        Returns: True or False
+        Returns: A list of logs that will be printed
         """
         logs = Log()
 
-        full_path = (self.parsed_args.csv_file if self.parsed_args.csv_file
+        full_path = (self.parsed_args.config_file if self.parsed_args.config_file
                      else get_file_full_path(settings.CERTS_LIST_FILE))
 
         certs_data = None
@@ -171,17 +183,12 @@ of the certs. Check the docs for more info')
 
             is_in_path = helper.check_path(logs, row, certs_names)
 
-            has_flags = False
             if is_in_path:
-                has_flags = helper.check_flags(logs, row, certs_names, certs_from_path)
+                helper.check_flags(logs, row, certs_names, certs_from_path)
 
-            is_monitoring, getcert_data = helper.check_is_monitoring(logs, row)
+            helper.check_is_monitoring(logs, row)
 
-            if not is_in_path or not is_monitoring or not has_flags:
-                logs.append(('Certificate {} in path: {}, flags: {}, monitored: {}'
-                             .format(row['name'], is_in_path, has_flags, is_monitoring)))
-
-        logs.append(('Certificates checked successfully.'))
+        logs.info(messages.check_done())
         return logs
 
     def ck_kra_setup(self):
@@ -200,12 +207,8 @@ of the certs. Check the docs for more info')
         if any(kra_certs):
             result['kra_cert_present'] = True
 
-        message = 'KRA is installed: {installed}. Cert was found: {cert_found}'
-        message = message.format(installed=result['kra_in_expected_path'],
-                                 cert_found=result['kra_cert_present'])
-
-        self.logger.info(message)
-
+        self.logger.info(messages.kra_status(result['kra_in_expected_path'],
+                         result['kra_cert_present']))
         return result
 
     def ck_ra_cert_serialnumber(self, cert_name='ipaCert'):

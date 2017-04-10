@@ -67,7 +67,7 @@ class TestHealthChecker(unittest.TestCase):
 
     def test_full_check(self):
         mock_file_path = self.path_mock_files + 'certs_list_mock.yaml'
-        hc = HealthChecker(sys_args=['full_check', '--csv-file', mock_file_path])
+        hc = HealthChecker(sys_args=['full_check', '--config-file', mock_file_path])
 
         original_certs = {'certs': [
             {'path': self.path_mock_files,
@@ -105,13 +105,13 @@ class TestHealthChecker(unittest.TestCase):
         certs = copy.deepcopy(original_certs)
         certs['certs'][0]['path'] = '/tmp'
         create_config_file(certs)
-        self.assertEqual(3, len(hc.full_check().logs))
+        self.assertEqual(2, len(hc.full_check().logs))
 
         # checking the case that the cert has the wrong trust flags
         certs = copy.deepcopy(original_certs)
         certs['certs'][0]['trustflags'] = 'u,u,u'
         create_config_file(certs)
-        self.assertEqual(3, len(hc.full_check().logs))
+        self.assertEqual(2, len(hc.full_check().logs))
 
         # checking when the cert is not in the getcert monitoring
         def fake_getcert_list_result():
@@ -122,10 +122,10 @@ class TestHealthChecker(unittest.TestCase):
         certs['certs'][0]['monitored'] = True
         create_config_file(certs)
 
-        hc = HealthChecker(sys_args=['full_check', '--csv-file', mock_file_path])
+        hc = HealthChecker(sys_args=['full_check', '--config-file', mock_file_path])
         checker_helper.getcert_list = fake_getcert_list_result
 
-        self.assertEqual(3, len(hc.full_check().logs))
+        self.assertEqual(2, len(hc.full_check().logs))
 
     def test_ck_kra_setup(self):
         kra_path = self.path_mock_files + 'kra'
@@ -163,8 +163,8 @@ class TestHealthChecker(unittest.TestCase):
         result_expected = {'kra_in_expected_path': False, 'kra_cert_present': False}
         self.assertEqual(result_expected, hc.ck_kra_setup())
 
-    # @unittest.skipIf(os.environ.get('IS_TRAVIS'), 'travis does not have freeipa installed')
-    @unittest.skip('refactoring checker')
+    @unittest.skipIf(os.environ.get('IS_TRAVIS') is not None,
+                     'travis does not have freeipa installed')
     def test_ck_ra_cert_serialnumber(self):
         from freeipa_health_checker import settings, ldap_helper
         expected_serialnumber = 3
