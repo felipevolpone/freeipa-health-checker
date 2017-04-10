@@ -1,4 +1,5 @@
 
+# used in the full_check command
 certs:
   - path: '/etc/pki/pki-tomcat/alias'
     name: 'caSigningCert cert-pki-ca'
@@ -25,9 +26,11 @@ certs:
     trustflags: 'u,u,u'
     monitored: false
 
+# used in the certs_expired command
 certs_expired:
     - path: '/etc/pki/pki-tomcat/alias'
 
+# used in the ck_kra_setup command
 kra_setup:
     kra_dir: '/etc/pki/pki-tomcat/kra'
     cert_path: '/etc/pki/pki-tomcat/alias'
