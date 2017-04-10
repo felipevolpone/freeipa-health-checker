@@ -5,26 +5,34 @@ certs:
     name: 'caSigningCert cert-pki-ca'
     trustflags: 'CTu,Cu,Cu'
     monitored: false
+    type: 'nssdb'
 
   - path: '/etc/pki/pki-tomcat/alias'
     name: 'Server-Cert cert-pki-ca'
     trustflags: 'u,u,u'
     monitored: false
+    type: 'nssdb'
 
   - path: '/etc/pki/pki-tomcat/alias'
     name: 'auditSigningCert cert-pki-ca'
     trustflags: 'u,u,Pu'
     monitored: true
+    type: 'nssdb'
 
   - path: '/etc/pki/pki-tomcat/alias'
     name: 'ocspSigningCert cert-pki-ca'
     trustflags: 'u,u,u'
     monitored: true
+    type: 'nssdb'
 
   - path: '/etc/pki/pki-tomcat/alias'
     name: 'subsystemCert cert-pki-ca'
     trustflags: 'u,u,u'
     monitored: false
+    type: 'nssdb'
+
+  - path: '/etc/ipa/ca.crt'
+    type: 'crt'
 
 # used in the certs_expired command
 certs_expired:

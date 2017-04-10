@@ -6,6 +6,9 @@ from .utils import get_logger, execute, create_logger, get_file_full_path
 from .checker_helper import Log
 from . import settings, messages, checker_helper as helper
 
+from . import ldap_helper
+from ipalib import x509
+
 
 class HealthChecker(object):
 
@@ -171,18 +174,32 @@ class HealthChecker(object):
         config_data = self.__read_certs_config_file()
 
         for row in config_data['certs']:
-            certs_from_path = self.list_certs(row['path'])
-            certs_names = [cert[0] for cert in certs_from_path]
 
-            is_in_path = helper.check_path(logs, row, certs_names)
+            if row['type'] == 'nssdb':
+                self.__process_nssdb(logs, row)
 
-            if is_in_path:
-                helper.check_flags(logs, row, certs_names, certs_from_path)
-
-            helper.check_is_monitoring(logs, row)
+                # elif row['type'] == 'crt':
+                #     self.__process_crt_certs(logs, row)
 
         logs.info(messages.check_done())
         return logs
+
+    def __process_crt_certs(self, logs, row):
+        try:
+            x509.load_certificate_from_file(row['path'])
+        except:
+            self.logger.error(messages.cert_not_in_path(None, row['path']))
+
+    def __process_nssdb(self, logs, row):
+        certs_from_path = self.list_certs(row['path'])
+        certs_names = [cert[0] for cert in certs_from_path]
+
+        is_in_path = helper.check_path(logs, row, certs_names)
+
+        if is_in_path:
+            helper.check_flags(logs, row, certs_names, certs_from_path)
+
+        helper.check_is_monitoring(logs, row)
 
     def ck_kra_setup(self):
         """
@@ -215,9 +232,6 @@ class HealthChecker(object):
         return result
 
     def ck_ra_cert_serialnumber(self, cert_name='ipaCert'):
-        from . import ldap_helper
-        from ipalib import x509
-
         cert_serial_number = None
 
         if self.parsed_args.pem_dir:

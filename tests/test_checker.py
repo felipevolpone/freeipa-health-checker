@@ -68,23 +68,10 @@ class TestHealthChecker(unittest.TestCase):
             {'path': self.path_to_mock_files,
              'monitored': False,
              'name': 'caSigningCert cert-pki-ca',
-             'trustflags': 'CTu,Cu,Cu'},
-            {'path': self.path_to_mock_files,
-             'monitored': False,
-             'name': 'Server-Cert cert-pki-ca',
-             'trustflags': 'u,u,u'},
-            {'path': self.path_to_mock_files,
-             'monitored': True,
-             'name': 'auditSigningCert cert-pki-ca',
-             'trustflags': 'u,u,Pu'},
-            {'path': self.path_to_mock_files,
-             'monitored': True,
-             'name': 'ocspSigningCert cert-pki-ca',
-             'trustflags': 'u,u,u'},
-            {'path': self.path_to_mock_files,
-             'monitored': False,
-             'name': 'subsystemCert cert-pki-ca',
-             'trustflags': 'u,u,u'}
+             'trustflags': 'CTu,Cu,Cu',
+             'type': 'nssdb'},
+            {'path': self.path_to_mock_files + 'ca.crt',
+             'type': 'crt'}
         ]}
 
         # checking when the cert is not in the getcert monitoring
