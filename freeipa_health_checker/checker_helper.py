@@ -112,3 +112,26 @@ Cert = namedtuple('Cert', 'from_date until_date')
 
 def parse_cert_text(cert_text):
     return Cert(from_date=cert_text[7], until_date=cert_text[8])
+
+
+class Log(object):
+
+    INFO = 'INFO'
+    DEBUG = 'DEBUG'
+    ERROR = 'ERROR'
+
+    def __init__(self):
+        self.logs = []
+
+    def info(self, item):
+        self.__append(item, self.INFO)
+
+    def debug(self, item):
+        self.__append(item, self.DEBUG)
+
+    def error(self, item):
+        self.__append(item, self.ERROR)
+
+    def __append(self, item, status):
+        self.logs.append((item, status))
+

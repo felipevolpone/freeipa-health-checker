@@ -4,29 +4,8 @@ from datetime import datetime
 
 from .utils import get_logger, execute, create_logger, get_file_full_path
 from . import checker_helper as helper
+from .checker_helper import Log
 from . import settings, messages
-
-
-class Log(object):
-
-    INFO = 'INFO'
-    DEBUG = 'DEBUG'
-    ERROR = 'ERROR'
-
-    def __init__(self):
-        self.logs = []
-
-    def info(self, item):
-        self.__append(item, self.INFO)
-
-    def debug(self, item):
-        self.__append(item, self.DEBUG)
-
-    def error(self, item):
-        self.__append(item, self.ERROR)
-
-    def __append(self, item, status):
-        self.logs.append((item, status))
 
 
 class HealthChecker(object):
@@ -166,7 +145,7 @@ of the certs. Check the docs for more info')
         Method to check if the certificates listed on file certs_list.csv
         exists where they should exist and if they have the right trust flags.
 
-        Returns: A list of logs that will be printed
+        Returns: A list of logs that will be printed on the run_cli function
         """
         logs = Log()
 
@@ -192,6 +171,14 @@ of the certs. Check the docs for more info')
         return logs
 
     def ck_kra_setup(self):
+        """
+        Method to check if the environment has the KRA module installed. If
+        it has, the tool checks if the certificate was created.
+
+        Returns: A dict of status; eg:
+            {'kra_in_expected_path': False, 'kra_cert_present': False}
+        """
+
         path_to_kra = self.parsed_args.dir
 
         result = {'kra_in_expected_path': False, 'kra_cert_present': False}
