@@ -1,7 +1,8 @@
 import unittest, os, yaml
 from datetime import datetime
-from freeipa_health_checker.checker import HealthChecker
-from freeipa_health_checker import checker_helper
+from freeipa_health_checker import checker
+from freeipa_health_checker.cli import HealthChecker
+from freeipa_health_checker.parser import BaseCertificate
 
 
 class TestHealthChecker(unittest.TestCase):
@@ -14,96 +15,24 @@ class TestHealthChecker(unittest.TestCase):
         with open(self.mock_config_certs_file, 'w+') as f:
             yaml.dump(certs, f)
 
-    def test_list_certs(self):
-        hc = HealthChecker(sys_args=['list_certs', self.path_to_mock_files])
-
-        certs_list = [('caSigningCert cert-pki-ca', 'CTu,Cu,Cu'),
-                      ('Server-Cert cert-pki-ca', 'u,u,u'),
-                      ('auditSigningCert cert-pki-ca', 'u,u,Pu'),
-                      ('ocspSigningCert cert-pki-ca', 'u,u,u'),
-                      ('subsystemCert cert-pki-ca', 'u,u,u')]
-
-        self.assertEqual(certs_list, hc.list_certs())
-
     def test_certs_expired(self):
-        # mocking data and methods
-        current_year = datetime.now().year
-        cert = ['Certificate:', 'Data:', 'Version: 3 (0x2)', 'Serial Number: 10 (0xa)',
-                'Signature Algorithm: PKCS #1 SHA-256 With RSA Encryption',
-                'Issuer: "CN=Certificate Authority,O=IPA.EXAMPLE"',
-                'Validity:',
-                'Not Before: Sun Apr 02 14:53:02 ' + str(current_year - 1),
-                'Not After : Fri Apr 02 14:53:02 ' + str(current_year + 2)]
 
-        def fake_get_cert(x, y):
-            return cert
+        today = datetime.today()
+        from_date = datetime(today.year - 2, today.month, today.day)
+        until_date = datetime(today.year + 2, today.month, today.day)
 
-        def fake_list_cert(path=None):
-            return [('caSigningCert cert-pki-ca', 'u,u,u,u')]
+        certificate = BaseCertificate(valid_not_before=from_date, valid_not_after=until_date)
+        self.assertIsNone(checker.check_is_expired(certificate))
 
-        # a valid path is not used, because the method to get the certs from
-        # the path will be mocked
-        hc = HealthChecker(sys_args=['certs_expired'])
-        hc._get_cert = fake_get_cert
-        hc.list_certs = fake_list_cert
+        next_year = datetime(today.year + 1, today.month, today.day)
+        certificate = BaseCertificate(valid_not_before=next_year, valid_not_after=until_date,
+                                      name='anything')
+        self.assertEqual('not_valid_yet', checker.check_is_expired(certificate))
 
-        # testing when is valid
-        expected = [('caSigningCert cert-pki-ca', True)]
-        self.assertEqual(expected, hc.certs_expired())
-
-        # testing when the certificate is not valid yet
-        cert[7] = 'Not Before: Sun Apr 02 14:53:02 ' + str(current_year + 2)
-        expected = [('caSigningCert cert-pki-ca', False)]
-        self.assertEqual(expected, hc.certs_expired())
-
-        # testing when the certificate expired
-        cert[8] = 'Not After: Sun Apr 02 14:53:02 ' + str(current_year - 2)
-        expected = [('caSigningCert cert-pki-ca', False)]
-        self.assertEqual(expected, hc.certs_expired())
-
-    def test_full_check(self):
-        hc = HealthChecker(sys_args=['full_check', '--config-file', self.mock_config_certs_file])
-
-        original_certs = {'certs': [
-            {'path': self.path_to_mock_files,
-             'monitored': False,
-             'name': 'caSigningCert cert-pki-ca',
-             'trustflags': 'CTu,Cu,Cu',
-             'type': 'nssdb'},
-            {'path': self.path_to_mock_files + 'ca.crt',
-             'type': 'crt'}
-        ]}
-
-        # checking when the cert is not in the getcert monitoring
-        def fake_getcert_list_result():
-            with open(self.path_to_mock_files + 'getcert_list_result.txt') as f:
-                return checker_helper.process_getcert_data(f.read())
-
-        checker_helper.getcert_list = fake_getcert_list_result
-
-        # the success case. nothing fails
-        self.create_config_file(original_certs)
-        self.assertEqual(1, len(hc.full_check().logs))
-
-        # checking in case when the cert is not found
-        import copy
-        certs = copy.deepcopy(original_certs)
-        certs['certs'][0]['path'] = '/tmp'
-        self.create_config_file(certs)
-        self.assertEqual(2, len(hc.full_check().logs))
-
-        # checking the case that the cert has the wrong trust flags
-        certs = copy.deepcopy(original_certs)
-        certs['certs'][0]['trustflags'] = 'u,u,u'
-        self.create_config_file(certs)
-        self.assertEqual(2, len(hc.full_check().logs))
-
-        certs = copy.deepcopy(original_certs)
-        certs['certs'][0]['monitored'] = True
-        self.create_config_file(certs)
-
-        hc = HealthChecker(sys_args=['full_check', '--config-file', self.mock_config_certs_file])
-        self.assertEqual(2, len(hc.full_check().logs))
+        until_date = datetime(today.year - 1, today.month, today.day)
+        certificate = BaseCertificate(valid_not_before=from_date, valid_not_after=until_date,
+                                      name='anything')
+        self.assertEqual('expired', checker.check_is_expired(certificate))
 
     def test_ck_kra_setup(self):
         kra_path = self.path_to_mock_files + 'kra'
@@ -115,12 +44,12 @@ class TestHealthChecker(unittest.TestCase):
         # creating the dir to make the test pass
         os.mkdir(kra_path)
 
+        # creating fake data
         certs_config_data = {'kra_setup': {'kra_dir': kra_path,
                                            'cert_path': self.path_to_mock_files}}
         self.create_config_file(certs_config_data)
 
         cert_data = [('caSigningCert cert-pki-ca', 'CTu,Cu,Cu'),
-                     ('Server-Cert cert-pki-ca', 'u,u,u'),
                      ('auditSigningCert cert-pki-ca', 'u,u,Pu'),
                      ('ocspSigningCert cert-pki-ca', 'u,u,u'),
                      ('subsystemCert cert-pki-ca', 'u,u,u'),
@@ -130,24 +59,27 @@ class TestHealthChecker(unittest.TestCase):
             return cert_data
 
         hc = HealthChecker(sys_args=['ck_kra_setup', '--config-file', self.mock_config_certs_file])
-        hc._execute_and_get_certs = fake_execute_and_get_certs
+        hc.list_certs = fake_execute_and_get_certs
 
         # testing when kra is present and it has dir
         result_expected = {'kra_in_expected_path': True,
                            'kra_cert_present': True}
-        self.assertEqual(result_expected, hc.ck_kra_setup())
+        self.assertEqual(result_expected, result_expected, checker.check_kra_setup(
+            kra_path, self.path_to_mock_files, cert_data))
 
+        # removing fake data
         os.rmdir(kra_path)
 
         # testing when kra is not present and it hasn't the dir
         del cert_data[-1]
         result_expected = {'kra_in_expected_path': False, 'kra_cert_present': False}
-        self.assertEqual(result_expected, hc.ck_kra_setup())
+        self.assertEqual(result_expected, result_expected, checker.check_kra_setup(
+            kra_path, self.path_to_mock_files, cert_data))
 
     @unittest.skipIf(os.environ.get('IS_TRAVIS') is not None,
                      'travis does not have freeipa installed')
     def test_ck_ra_cert_serialnumber(self):
-        from freeipa_health_checker import settings, ldap_helper
+        from freeipa_health_checker import ldap_helper
         expected_serialnumber = 3
 
         def fake_ldap():
@@ -156,9 +88,14 @@ class TestHealthChecker(unittest.TestCase):
         # mocking the ldap call
         ldap_helper.get_ra_cert_serialnumber = fake_ldap
 
-        hc = HealthChecker(sys_args=['ck_ra_cert_serialnumber', '--nssdb-dir',
-                           self.path_to_mock_files])
-        self.assertEqual(True, hc.ck_ra_cert_serialnumber('Server-Cert cert-pki-ca'))
+        # creating fake data
+        certs_config_data = {'ck_ra_cert': {'pem_dir': '', 'nssdb_dir': self.path_to_mock_files}}
+
+        cert_serial_number, ldap_serialnumber = checker.check_ra_cert(certs_config_data,
+                                                                      'Server-Cert cert-pki-ca')
+        self.assertEqual((3, 3), (cert_serial_number, ldap_serialnumber))
 
         expected_serialnumber = 7
-        self.assertEqual(False, hc.ck_ra_cert_serialnumber('Server-Cert cert-pki-ca'))
+        cert_serial_number, ldap_serialnumber = checker.check_ra_cert(certs_config_data,
+                                                                      'Server-Cert cert-pki-ca')
+        self.assertEqual((3, 7), (cert_serial_number, ldap_serialnumber))

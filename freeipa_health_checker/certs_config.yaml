@@ -31,14 +31,18 @@ certs:
     monitored: false
     type: 'nssdb'
 
+  - path: '/etc/pki/tls/cert.pem'
+    type: 'pem'
+
   - path: '/etc/ipa/ca.crt'
     type: 'crt'
 
-# used in the certs_expired command
-certs_expired:
-    - path: '/etc/pki/pki-tomcat/alias'
-
 # used in the ck_kra_setup command
 kra_setup:
-    kra_dir: '/etc/pki/pki-tomcat/kra'
-    cert_path: '/etc/pki/pki-tomcat/alias'
+  kra_dir: '/etc/pki/pki-tomcat/kra'
+  cert_path: '/etc/pki/pki-tomcat/alias'
+
+# used in the ck_ra_cert command
+ck_ra_cert:
+  pem_dir: '/var/lib/ipa/ra-agent.pem'
+  nssdb_dir: '/etc/httpd/alias'
