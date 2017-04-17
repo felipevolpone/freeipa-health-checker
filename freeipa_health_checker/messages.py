@@ -58,3 +58,7 @@ def cert_has_trust_flags(certificate):
 
 def certificate_valid(certificate_name):
     return 'Certificate {} is valid (not expired)'.format(certificate_name)
+
+
+def certificate_der_data_are_equal(certificates_are_same):
+    return 'Certificates are the same: {}'.format(certificates_are_same)

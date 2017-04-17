@@ -80,16 +80,22 @@ def check_ra_cert(config_data, cert_name='ipaCert'):
         certificate = parser.BaseCertificate(serial_number=cert.serial_number)
 
         cert_serialnumber = certificate.serial_number
+        cert_derdata = cert.der_data
 
         logger.info(messages.ra_cert_from(cert_name, nssdb_dir))
 
     elif os.path.exists(pem_dir):
         from ipalib import x509
         certificate = x509.load_certificate_from_file(pem_dir)
+
         cert_serialnumber = certificate.serial_number
+        cert_derdata = certificate.der_data
 
         logger.info(messages.ra_cert_from(cert_name, pem_dir))
 
-    ldap_serialnumber = ldap_helper.get_ra_cert_serialnumber()
+    ldap_serialnumber, usercertificate = ldap_helper.get_ra_cert()
+
+    certificates_are_same = usercertificate == cert_derdata
+    logger.info(messages.certificate_der_data_are_equal(certificates_are_same))
 
     return cert_serialnumber, ldap_serialnumber

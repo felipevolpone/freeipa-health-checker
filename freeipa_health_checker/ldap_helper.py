@@ -5,7 +5,7 @@ from ipalib import api
 from ipaplatform.paths import paths
 
 
-def get_ra_cert_serialnumber():
+def get_ra_cert():
     api.bootstrap(in_server=True, context='restart', confdir=paths.ETC_IPA)
     api.finalize()
 
@@ -13,8 +13,9 @@ def get_ra_cert_serialnumber():
     conn = ldap2.ldap2(api)
     conn.connect()
 
-    entry = conn.get_entry(base_dn, ['description'])
+    entry = conn.get_entry(base_dn, ['description', 'usercertificate'])
     description = entry['description'][0]
+    usercertificate = entry['usercertificate'][0]
     serial_number = description.split(';')[1]
 
-    return int(serial_number)
+    return int(serial_number), usercertificate

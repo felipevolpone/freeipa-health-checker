@@ -83,10 +83,11 @@ class TestHealthChecker(unittest.TestCase):
         expected_serialnumber = 3
 
         def fake_ldap():
-            return expected_serialnumber
+            return expected_serialnumber, 'usercertificate'
 
         # mocking the ldap call
-        ldap_helper.get_ra_cert_serialnumber = fake_ldap
+        # the certificate content will not be tested
+        ldap_helper.get_ra_cert = fake_ldap
 
         # creating fake data
         certs_config_data = {'ck_ra_cert': {'pem_dir': '', 'nssdb_dir': self.path_to_mock_files}}
